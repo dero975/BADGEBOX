@@ -341,6 +341,7 @@
                   <th>Orario</th>
                   <th>Tipo</th>
                   <th>Giorno Logico</th>
+                  <th>Azioni</th>
                 </tr>
               </thead>
               <tbody>
@@ -354,9 +355,16 @@
             tabella += `
               <tr>
                 <td>${dataFormattata}</td>
-                <td>${timbratura.ore}</td>
+                <td>
+                  <img src="assets/icons/orologio.png" alt="Orario" style="width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;">
+                  ${timbratura.ore}
+                </td>
                 <td class="${timbratura.tipo}">${timbratura.tipo.toUpperCase()}</td>
                 <td>${giornoLogicoFormattato}</td>
+                <td>
+                  <img src="assets/icons/matita-colorata.png" alt="Modifica" style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer; vertical-align: middle;" onclick="modificaTimbratura(${timbratura.id})">
+                  <img src="assets/icons/cancella.png" alt="Elimina" style="width: 20px; height: 20px; cursor: pointer; vertical-align: middle;" onclick="eliminaTimbratura(${timbratura.id})">
+                </td>
               </tr>
             `;
           });
@@ -394,6 +402,70 @@
       const trentaGiorniFa = new Date();
       trentaGiorniFa.setDate(trentaGiorniFa.getDate() - 30);
       document.getElementById('data-da').value = trentaGiorniFa.toISOString().split('T')[0];
+
+      // Funzione per modificare una timbratura
+      window.modificaTimbratura = async function(id) {
+        const nuovoOrario = prompt('Inserisci il nuovo orario (HH:MM:SS):');
+        if (!nuovoOrario) return;
+
+        // Validazione formato orario
+        const formatoOrario = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
+        if (!formatoOrario.test(nuovoOrario)) {
+          alert('Formato orario non valido. Usa il formato HH:MM:SS');
+          return;
+        }
+
+        try {
+          const { error } = await supabase
+            .from('timbrature')
+            .update({ ore: nuovoOrario })
+            .eq('id', id);
+
+          if (error) {
+            console.error('Errore modifica timbratura:', error);
+            alert('Errore nella modifica della timbratura');
+            return;
+          }
+
+          alert('Timbratura modificata con successo!');
+          // Ricarica le timbrature
+          const dataDa = document.getElementById('data-da').value;
+          const dataA = document.getElementById('data-a').value;
+          caricaTimbrature(dataDa || null, dataA || null);
+        } catch (error) {
+          console.error('Errore:', error);
+          alert('Errore nella modifica della timbratura');
+        }
+      };
+
+      // Funzione per eliminare una timbratura
+      window.eliminaTimbratura = async function(id) {
+        if (!confirm('Sei sicuro di voler eliminare questa timbratura?')) {
+          return;
+        }
+
+        try {
+          const { error } = await supabase
+            .from('timbrature')
+            .delete()
+            .eq('id', id);
+
+          if (error) {
+            console.error('Errore eliminazione timbratura:', error);
+            alert('Errore nell\'eliminazione della timbratura');
+            return;
+          }
+
+          alert('Timbratura eliminata con successo!');
+          // Ricarica le timbrature
+          const dataDa = document.getElementById('data-da').value;
+          const dataA = document.getElementById('data-a').value;
+          caricaTimbrature(dataDa || null, dataA || null);
+        } catch (error) {
+          console.error('Errore:', error);
+          alert('Errore nell\'eliminazione della timbratura');
+        }
+      };
     </script>
   </body>
 </html>

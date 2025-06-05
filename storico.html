@@ -263,12 +263,12 @@
       };
 
       // Imposta la data di oggi come default per il filtro "A"
-      document.getElementById('data-a').value = new Date().toISODate();
+      document.getElementById('data-a').value = new Date().toISOString().split('T')[0];
       
       // Imposta 30 giorni fa come default per il filtro "Da"
       const trentaGiorniFa = new Date();
       trentaGiorniFa.setDate(trentaGiorniFa.getDate() - 30);
-      document.getElementById('data-da').value = trentaGiorniFa.toISODate();
+      document.getElementById('data-da').value = trentaGiorniFa.toISOString().split('T')[0];
     </script>
   </body>
 </html>

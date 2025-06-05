@@ -248,7 +248,7 @@
 
       // Funzione per inserire una nuova timbratura
       async function inserisciTimbratura(pin, tipo) {
-        const ora = DateTime.now().toFormat("HH:mm:ss");
+        const oraFormattata = DateTime.now().toFormat("HH:mm:ss");
         const data = DateTime.now().toISODate();
 
         const utente = await verificaPin(pin);
@@ -264,7 +264,7 @@
         }
 
         // Calcolo giorno logico
-        const giornoLogico = calcolaGiornoLogico(data, ora);
+        const giornoLogico = calcolaGiornoLogico(data, oraFormattata);
 
         const { error } = await supabase
           .from("timbrature")
@@ -274,7 +274,7 @@
               nome: utente.nome,
               cognome: utente.cognome,
               tipo,
-              ore: ora,
+              ore: oraFormattata,
               data,
               giornologico: giornoLogico,
             },
@@ -287,7 +287,7 @@
         }
 
         mostraMessaggio(
-          `✅ ${utente.nome} ${utente.cognome} ${tipo.toUpperCase()} registrata alle ${ora}`,
+          `✅ ${utente.nome} ${utente.cognome} ${tipo.toUpperCase()} registrata alle ${oraFormattata}`,
         );
         pinInput.value = "";
       }

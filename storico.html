@@ -1,2 +1,274 @@
-Analysing the original code and the changes, I will apply the changes to replace `ora` with `orario` and update the code accordingly to ensure the application functions as intended.
-```
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Storico Timbrature</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .info-utente {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .filtri {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+
+      .filtri input,
+      .filtri button {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      .filtri button {
+        background-color: #3b82f6;
+        color: white;
+        cursor: pointer;
+      }
+
+      .filtri button:hover {
+        background-color: #2563eb;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      table th,
+      table td {
+        text-align: center;
+        padding: 12px;
+        border: 1px solid #ddd;
+      }
+
+      table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+      }
+
+      .entrata {
+        background-color: #d4edda;
+        color: #155724;
+      }
+
+      .uscita {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+
+      .btn-back {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 10px 20px;
+        background-color: #6c757d;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+
+      .btn-back:hover {
+        background-color: #5a6268;
+      }
+
+      .no-data {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-style: italic;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <a href="utenti.html" class="btn-back">← Torna agli Utenti</a>
+      
+      <h1>Storico Timbrature</h1>
+      
+      <div class="info-utente" id="info-utente">
+        <div class="loading">Caricamento informazioni utente...</div>
+      </div>
+
+      <div class="filtri">
+        <label>Da:</label>
+        <input type="date" id="data-da" />
+        <label>A:</label>
+        <input type="date" id="data-a" />
+        <button onclick="filtraTimbrature()">Filtra</button>
+        <button onclick="resetFiltri()">Reset</button>
+      </div>
+
+      <div id="contenuto-tabella">
+        <div class="loading">Caricamento timbrature...</div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+      const supabase = createClient(
+        "https://pylfpqitdogatlsndxtf.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5bGZwcWl0ZG9nYXRsc25keHRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzU5OTcsImV4cCI6MjA2Mzk1MTk5N30.GXWmglDP7WcLSozta8UT6Ktd9XzIXSCxC5pJ4oWX3LU"
+      );
+
+      // Ottieni il PIN dall'URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const pin = urlParams.get('pin');
+
+      if (!pin) {
+        document.getElementById('contenuto-tabella').innerHTML = 
+          '<div class="no-data">PIN non specificato nell\'URL</div>';
+      } else {
+        caricaInformazioniUtente();
+        caricaTimbrature();
+      }
+
+      async function caricaInformazioniUtente() {
+        try {
+          const { data, error } = await supabase
+            .from('utenti')
+            .select('nome, cognome, email')
+            .eq('pin', pin)
+            .single();
+
+          if (error || !data) {
+            document.getElementById('info-utente').innerHTML = 
+              '<div style="color: red;">Utente non trovato</div>';
+            return;
+          }
+
+          document.getElementById('info-utente').innerHTML = `
+            <h2>${data.nome} ${data.cognome}</h2>
+            <p><strong>PIN:</strong> ${pin.padStart(2, '0')} | <strong>Email:</strong> ${data.email}</p>
+          `;
+        } catch (error) {
+          console.error('Errore caricamento utente:', error);
+          document.getElementById('info-utente').innerHTML = 
+            '<div style="color: red;">Errore nel caricamento delle informazioni utente</div>';
+        }
+      }
+
+      async function caricaTimbrature(dataInizio = null, dataFine = null) {
+        try {
+          let query = supabase
+            .from('timbrature')
+            .select('*')
+            .eq('pin', pin)
+            .order('data', { ascending: false })
+            .order('ore', { ascending: false });
+
+          if (dataInizio) {
+            query = query.gte('data', dataInizio);
+          }
+          if (dataFine) {
+            query = query.lte('data', dataFine);
+          }
+
+          const { data, error } = await query;
+
+          if (error) {
+            console.error('Errore caricamento timbrature:', error);
+            document.getElementById('contenuto-tabella').innerHTML = 
+              '<div class="no-data" style="color: red;">Errore nel caricamento delle timbrature</div>';
+            return;
+          }
+
+          if (!data || data.length === 0) {
+            document.getElementById('contenuto-tabella').innerHTML = 
+              '<div class="no-data">Nessuna timbratura trovata per questo utente</div>';
+            return;
+          }
+
+          // Crea la tabella
+          let tabella = `
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Orario</th>
+                  <th>Tipo</th>
+                  <th>Giorno Logico</th>
+                </tr>
+              </thead>
+              <tbody>
+          `;
+
+          data.forEach(timbratura => {
+            const dataFormattata = new Date(timbratura.data).toLocaleDateString('it-IT');
+            const giornoLogicoFormattato = timbratura.giornologico ? 
+              new Date(timbratura.giornologico).toLocaleDateString('it-IT') : 'N/A';
+            
+            tabella += `
+              <tr>
+                <td>${dataFormattata}</td>
+                <td>${timbratura.ore}</td>
+                <td class="${timbratura.tipo}">${timbratura.tipo.toUpperCase()}</td>
+                <td>${giornoLogicoFormattato}</td>
+              </tr>
+            `;
+          });
+
+          tabella += `
+              </tbody>
+            </table>
+          `;
+
+          document.getElementById('contenuto-tabella').innerHTML = tabella;
+
+        } catch (error) {
+          console.error('Errore:', error);
+          document.getElementById('contenuto-tabella').innerHTML = 
+            '<div class="no-data" style="color: red;">Errore nel caricamento delle timbrature</div>';
+        }
+      }
+
+      window.filtraTimbrature = function() {
+        const dataDa = document.getElementById('data-da').value;
+        const dataA = document.getElementById('data-a').value;
+        caricaTimbrature(dataDa || null, dataA || null);
+      };
+
+      window.resetFiltri = function() {
+        document.getElementById('data-da').value = '';
+        document.getElementById('data-a').value = '';
+        caricaTimbrature();
+      };
+
+      // Imposta la data di oggi come default per il filtro "A"
+      document.getElementById('data-a').value = new Date().toISODate();
+      
+      // Imposta 30 giorni fa come default per il filtro "Da"
+      const trentaGiorniFa = new Date();
+      trentaGiorniFa.setDate(trentaGiorniFa.getDate() - 30);
+      document.getElementById('data-da').value = trentaGiorniFa.toISODate();
+    </script>
+  </body>
+</html>

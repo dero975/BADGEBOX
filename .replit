@@ -9,7 +9,19 @@ channel = "stable-23_05"
 [deployment]
 deploymentTarget = "static"
 build = ["npm", "run", "build"]
-publicDir = "dist"
+publicDir = "."
+
+[[deployment.rewrites]]
+from = "/utenti.html"
+to = "/utenti.html"
+
+[[deployment.rewrites]]
+from = "/storico.html"
+to = "/storico.html"
+
+[[deployment.rewrites]]
+from = "/*"
+to = "/index.html"
 
 [[ports]]
 localPort = 5173

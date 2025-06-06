@@ -352,7 +352,7 @@
       }
       const { data, error } = await supabase
         .from("timbrature")
-        .select("*")
+        .select("id, pin, nome, cognome, tipo, data, ora, giornologico")
         .eq("pin", pin)
         .gte("giornologico", dataInizio.value)
         .lte("giornologico", dataFine.value)
@@ -398,21 +398,31 @@
         const timbraturaEntrata = timbratureOggi.find(t => t.tipo === "entrata") || null;
         const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
         let oreLavorate = "—";
-        if (timbraturaEntrata && timbraturaUscita && timbraturaEntrata.ora && timbraturaUscita.ora) {
-          const inizio = new Date(`1970-01-01T${timbraturaEntrata.ora}`);
-          const fine = new Date(`1970-01-01T${timbraturaUscita.ora}`);
-          if (fine < inizio) fine.setDate(fine.getDate() + 1);
-          const diffMs = fine - inizio;
-          const h = Math.floor(diffMs / (1000 * 60 * 60));
-          const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-          oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
-          totaleMensileOre += h + m / 60;
+        if (timbraturaEntrata && timbraturaUscita) {
+          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.time || null;
+          const oraUscita = timbraturaUscita.ora || timbraturaUscita.time || null;
+          
+          if (oraEntrata && oraUscita) {
+            const inizio = new Date(`1970-01-01T${oraEntrata}`);
+            const fine = new Date(`1970-01-01T${oraUscita}`);
+            if (fine < inizio) fine.setDate(fine.getDate() + 1);
+            const diffMs = fine - inizio;
+            const h = Math.floor(diffMs / (1000 * 60 * 60));
+            const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
+            totaleMensileOre += h + m / 60;
+          }
         }
         const riga = document.createElement("tr");
+        const oraEntrataDisplay = timbraturaEntrata && (timbraturaEntrata.ora || timbraturaEntrata.time) ? 
+          (timbraturaEntrata.ora || timbraturaEntrata.time).slice(0,5) : '—';
+        const oraUscitaDisplay = timbraturaUscita && (timbraturaUscita.ora || timbraturaUscita.time) ? 
+          (timbraturaUscita.ora || timbraturaUscita.time).slice(0,5) : '—';
+          
         riga.innerHTML = `
           <td style="text-align: left;">${dataFormattata}</td>
-          <td>${timbraturaEntrata && timbraturaEntrata.ora ? timbraturaEntrata.ora.slice(0,5) : '—'}</td>
-          <td>${timbraturaUscita && timbraturaUscita.ora ? timbraturaUscita.ora.slice(0,5) : '—'}</td>
+          <td>${oraEntrataDisplay}</td>
+          <td>${oraUscitaDisplay}</td>
           <td style="color: #ffff99;">${oreLavorate}</td>
           <td>
             <img

@@ -35,7 +35,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
+      gap: 15px;
       margin-bottom: 20px;
       flex-wrap: nowrap;
       max-width: 900px;
@@ -44,9 +44,12 @@
       position: relative;
     }
     .icona-calendario {
-      width: 24px;
-      height: 24px;
-      opacity: 0.7;
+      font-size: 24px;
+      opacity: 0.8;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .filtro-temporale select,
     .filtro-temporale input[type="date"] {
@@ -242,7 +245,7 @@
     <p class="titolo-piccolo">Storico Timbrature</p>
     <h1 id="intestazione" class="titolo-grande">Nome Cognome</h1>
     <div class="filtro-temporale">
-      <img src="assets/icons/calendario.png" alt="Calendario" class="icona-calendario" />
+      <span class="icona-calendario">📅</span>
       <select id="filtro-mese">
         <option value="corrente">Mese corrente</option>
         <option value="precedente">Mese precedente</option>

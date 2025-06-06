@@ -406,6 +406,7 @@
           if (typeof gLogico !== "string") {
             gLogico = new Date(gLogico).toISOString().split("T")[0];
           }
+          console.log(`Confronto: ${gLogico} === ${dataISO} per PIN ${t.pin}`);
           return gLogico === dataISO;
         });
 
@@ -511,7 +512,7 @@
       const pinVal = pin;
       const nomeVal = dipendente ? dipendente.nome : "";
       const cognomeVal = dipendente ? dipendente.cognome : "";
-      
+
       if (!dataCorrenteModale) {
         alert("Data non valida");
         return;
@@ -660,6 +661,7 @@
           if (typeof gLogico !== "string") {
             gLogico = new Date(gLogico).toISOString().split("T")[0];
           }
+          console.log(`Confronto: ${gLogico} === ${dataISO} per PIN ${t.pin}`);
           return gLogico === dataISO;
         });
         const timbraturaEntrata = timbratureOggi.find(t => t.tipo === "entrata") || null;

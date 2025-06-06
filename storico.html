@@ -98,11 +98,17 @@
       margin-right: auto;
       padding: 20px;
     }
-    .tabella-container {
+    .tabella-wrapper {
       background-color: #11263b;
-      border-radius: 0;
+      border-radius: 12px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
       margin-bottom: 10px;
+      padding: 16px;
+      overflow: hidden;
+    }
+    .tabella-container {
+      background-color: transparent;
+      border-radius: 0;
       padding: 0;
       overflow: hidden;
     }
@@ -290,19 +296,21 @@
         <span class="icona-calendario-campo">🗓️</span>
       </div>
     </div>
-    <div class="tabella-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Entrata</th>
-            <th>Uscita</th>
-            <th>Ore</th>
-            <th>Modifica</th>
-          </tr>
-        </thead>
-        <tbody id="storico-body"></tbody>
-      </table>
+    <div class="tabella-wrapper">
+      <div class="tabella-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Entrata</th>
+              <th>Uscita</th>
+              <th>Ore</th>
+              <th>Modifica</th>
+            </tr>
+          </thead>
+          <tbody id="storico-body"></tbody>
+        </table>
+      </div>
     </div>
     <!-- Pulsanti in fondo tabella -->
     <div class="pulsanti-basso">

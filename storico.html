@@ -80,6 +80,17 @@
       background-color: #1e293b;
       color: white;
     }
+    
+    /* Nasconde l'icona calendario nativa del browser */
+    .filtro-temporale input[type="date"]::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .filtro-temporale input[type="date"]::-moz-calendar-picker-indicator {
+      opacity: 0;
+      pointer-events: none;
+    }
     .icona-calendario-campo {
       position: absolute;
       right: 10px;

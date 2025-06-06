@@ -5,6 +5,13 @@ export default defineConfig({
   plugins: [],
   server: {
     host: '0.0.0.0',
-    hmr: true, // Change this line to false disable auto-refreshing.
+    hmr: {
+      port: 5174,
+      host: '0.0.0.0'
+    },
+    watch: {
+      usePolling: true,
+      interval: 1000
+    }
   }
 })

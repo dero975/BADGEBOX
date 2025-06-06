@@ -535,14 +535,22 @@
           dataDaUsare = d.toISOString().split("T")[0];
         }
         if (timbraturaCorrente && timbraturaCorrente.id) {
-          // Aggiornamento record esistente
+          // Aggiornamento record esistente - usa il nome colonna corretto
+          const nomeColonnaOra = timbraturaCorrente.ora ? 'ora' : 
+                                 timbraturaCorrente.time ? 'time' : 
+                                 timbraturaCorrente.timestamp ? 'timestamp' : 
+                                 timbraturaCorrente.orario ? 'orario' : 
+                                 'ora'; // fallback
+          
+          const updateData = {
+            [nomeColonnaOra]: valore,
+            giornologico: dataDaUsare,
+            data: dataCorrenteModale
+          };
+          
           const { data, error } = await supabase
             .from("timbrature")
-            .update({
-              ora: valore,
-              giornologico: dataDaUsare,
-              data: dataCorrenteModale
-            })
+            .update(updateData)
             .eq("id", timbraturaCorrente.id)
             .select();
           
@@ -551,18 +559,25 @@
             alert("Errore aggiornamento: " + error.message);
           }
         } else {
-          // Inserimento nuovo record
+          // Inserimento nuovo record - determina il nome corretto della colonna ora
+          const nomeColonnaOra = timbrature.length > 0 && timbrature[0].time ? 'time' :
+                                 timbrature.length > 0 && timbrature[0].timestamp ? 'timestamp' :
+                                 timbrature.length > 0 && timbrature[0].orario ? 'orario' :
+                                 'ora'; // fallback
+          
+          const insertData = {
+            tipo: tipo,
+            pin: pinVal,
+            nome: nomeVal,
+            cognome: cognomeVal,
+            data: dataCorrenteModale,
+            [nomeColonnaOra]: valore,
+            giornologico: dataDaUsare
+          };
+          
           const { data, error } = await supabase
             .from("timbrature")
-            .insert([{
-              tipo: tipo,
-              pin: pinVal,
-              nome: nomeVal,
-              cognome: cognomeVal,
-              data: dataCorrenteModale,
-              ora: valore,
-              giornologico: dataDaUsare
-            }])
+            .insert([insertData])
             .select();
           
           if (error) {

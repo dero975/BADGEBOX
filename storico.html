@@ -511,8 +511,15 @@
       const pinVal = pin;
       const nomeVal = dipendente ? dipendente.nome : "";
       const cognomeVal = dipendente ? dipendente.cognome : "";
+      
       if (!dataCorrenteModale) {
         alert("Data non valida");
+        return;
+      }
+
+      // Validazione: entrambi i campi devono essere compilati
+      if (!entrataVal || !uscitaVal) {
+        alert("Attenzione: Per salvare le modifiche è necessario compilare sia l'orario di ENTRATA che quello di USCITA.");
         return;
       }
       async function upsertTimbratura(tipo, valore, timbraturaCorrente) {

@@ -302,6 +302,7 @@
       const oggi = new Date();
       let anno = oggi.getFullYear();
       let meseIndice = oggi.getMonth();
+      
       if (mese === "precedente") {
         meseIndice -= 1;
         if (meseIndice < 0) {
@@ -309,10 +310,13 @@
           anno -= 1;
         }
       }
+      
+      // Sempre dal primo all'ultimo giorno del mese
       const meseString = String(meseIndice + 1).padStart(2, "0");
       const dataInizioString = `${anno}-${meseString}-01`;
       const ultimoGiorno = new Date(anno, meseIndice + 1, 0).getDate();
       const dataFineString = `${anno}-${meseString}-${String(ultimoGiorno).padStart(2, "0")}`;
+      
       dataInizio.value = dataInizioString;
       dataFine.value = dataFineString;
     }
@@ -389,7 +393,7 @@
         }
         const riga = document.createElement("tr");
         riga.innerHTML = `
-          <td>${dataFormattata}</td>
+          <td style="text-align: left;">${dataFormattata}</td>
           <td>${timbraturaEntrata ? timbraturaEntrata.ora.slice(0,5) : '—'}</td>
           <td>${timbraturaUscita ? timbraturaUscita.ora.slice(0,5) : '—'}</td>
           <td style="color: #ffff99;">${oreLavorate}</td>

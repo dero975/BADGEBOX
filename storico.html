@@ -414,9 +414,9 @@
 
         let oreLavorate = "—";
         if (timbraturaEntrata && timbraturaUscita) {
-          // Gestisce diversi nomi di colonna per l'ora
-          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time || null;
-          const oraUscita = timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time || null;
+          // Usa il nome corretto della colonna 'ore'
+          const oraEntrata = timbraturaEntrata.ore;
+          const oraUscita = timbraturaUscita.ore;
 
           if (oraEntrata && oraUscita) {
             const inizio = new Date(`1970-01-01T${oraEntrata}`);
@@ -430,8 +430,8 @@
           }
         }
         const riga = document.createElement("tr");
-        const oraEntrataDisplay = timbraturaEntrata && (timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time) ? (timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time).slice(0,5) : '—';
-        const oraUscitaDisplay = timbraturaUscita && (timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time) ? (timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time).slice(0,5) : '—';
+        const oraEntrataDisplay = timbraturaEntrata && timbraturaEntrata.ore ? timbraturaEntrata.ore.slice(0,5) : '—';
+        const oraUscitaDisplay = timbraturaUscita && timbraturaUscita.ore ? timbraturaUscita.ore.slice(0,5) : '—';
 
         riga.innerHTML = `
           <td style="text-align: left;">${dataFormattata}</td>
@@ -493,10 +493,10 @@
       });
       timbraturaEntrataCorrente = timbratureOggi.find(t => t.tipo === "entrata") || null;
       timbraturaUscitaCorrente = timbratureOggi.find(t => t.tipo === "uscita") || null;
-      const oraEntrata = timbraturaEntrataCorrente && (timbraturaEntrataCorrente.ora || timbraturaEntrataCorrente.ore || timbraturaEntrataCorrente.time) ? 
-        (timbraturaEntrataCorrente.ora || timbraturaEntrataCorrente.ore || timbraturaEntrataCorrente.time).slice(0,5) : "";
-      const oraUscita = timbraturaUscitaCorrente && (timbraturaUscitaCorrente.ora || timbraturaUscitaCorrente.ore || timbraturaUscitaCorrente.time) ? 
-        (timbraturaUscitaCorrente.ora || timbraturaUscitaCorrente.ore || timbraturaUscitaCorrente.time).slice(0,5) : "";
+      const oraEntrata = timbraturaEntrataCorrente && timbraturaEntrataCorrente.ore ? 
+        timbraturaEntrataCorrente.ore.slice(0,5) : "";
+      const oraUscita = timbraturaUscitaCorrente && timbraturaUscitaCorrente.ore ? 
+        timbraturaUscitaCorrente.ore.slice(0,5) : "";
 
       modaleEntrataInput.value = oraEntrata;
       modaleUscitaInput.value = oraUscita;
@@ -536,7 +536,7 @@
         if (timbraturaCorrente && timbraturaCorrente.id) {
           // Aggiornamento record esistente
           const updateData = {
-            ora: valore,
+            ore: valore,
             giornologico: dataDaUsare,
             data: dataCorrenteModale
           };
@@ -559,7 +559,7 @@
             nome: nomeVal,
             cognome: cognomeVal,
             data: dataCorrenteModale,
-            ora: valore,
+            ore: valore,
             giornologico: dataDaUsare
           };
 
@@ -659,8 +659,8 @@
         const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
         let oreLavorate = "—";
         if (timbraturaEntrata && timbraturaUscita) {
-          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time || null;
-          const oraUscita = timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time || null;
+          const oraEntrata = timbraturaEntrata.ore;
+          const oraUscita = timbraturaUscita.ore;
           if (oraEntrata && oraUscita) {
             const inizio = new Date(`1970-01-01T${oraEntrata}`);
             const fine = new Date(`1970-01-01T${oraUscita}`);
@@ -672,7 +672,7 @@
             totaleOre += h + m / 60;
           }
         }
-        dataPerExport.push([dataFormattata, timbraturaEntrata && (timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time) ? (timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time).slice(0,5) : "—", timbraturaUscita && (timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time) ? (timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time).slice(0,5) : "—", oreLavorate]);
+        dataPerExport.push([dataFormattata, timbraturaEntrata && timbraturaEntrata.ore ? timbraturaEntrata.ore.slice(0,5) : "—", timbraturaUscita && timbraturaUscita.ore ? timbraturaUscita.ore.slice(0,5) : "—", oreLavorate]);
       }
       // Riga totale ore (ultima)
       dataPerExport.push(["TOTALE MENSILE", "", "", totaleOre.toFixed(2)]);

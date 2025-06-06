@@ -1,0 +1,5 @@
+
+# Gestione routing per SPA
+/utenti.html /utenti.html 200
+/storico.html /storico.html 200
+/* /index.html 200

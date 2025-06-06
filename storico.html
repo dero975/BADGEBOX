@@ -42,7 +42,7 @@
       margin-right: auto;
       position: relative;
     }
-    
+
     .filtro-temporale select {
       flex: 1;
       max-width: 300px;
@@ -79,13 +79,13 @@
       background-color: #1e293b;
       color: white;
     }
-    
+
     /* Nasconde l'icona calendario nativa del browser */
     .filtro-temporale input[type="date"]::-webkit-calendar-picker-indicator {
       opacity: 0;
       pointer-events: none;
     }
-    
+
     .filtro-temporale input[type="date"]::-moz-calendar-picker-indicator {
       opacity: 0;
       pointer-events: none;
@@ -101,7 +101,7 @@
       z-index: 10;
     }
 
-    
+
     .container {
       padding-bottom: 20px;
       max-width: 900px;
@@ -371,8 +371,18 @@
     const selectFiltro = document.getElementById("filtro-mese");
     const dataInizio = document.getElementById("data-inizio");
     const dataFine = document.getElementById("data-fine");
+    // Recupera il PIN dalla query string con gestione errori
     const urlParams = new URLSearchParams(window.location.search);
-    const pin = urlParams.get("pin");
+    let pin = urlParams.get("pin");
+    console.log("URL completa:", window.location.href);
+    console.log("Query string:", window.location.search);
+    console.log("PIN dalla URL:", pin);
+
+    // Debug per Netlify
+    if (!pin) {
+      console.warn("PIN non trovato nella URL, possibile problema di routing");
+      console.log("Location:", window.location);
+    }
     let dipendente = null;
     let timbrature = [];
     function aggiornaRange(mese) {

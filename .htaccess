@@ -1,0 +1,13 @@
+
+RewriteEngine On
+
+# Gestione pagine HTML con query parameters
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^storico\.html.*$ /storico.html [L,QSA]
+RewriteRule ^utenti\.html.*$ /utenti.html [L,QSA]
+
+# Fallback per SPA
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]

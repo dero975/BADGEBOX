@@ -1,17 +1,44 @@
 
 [build]
   publish = "."
-  
-[[redirects]]
-  from = "/utenti.html"
-  to = "/utenti.html"
-  status = 200
+  command = "echo 'Build completato'"
 
+# Headers per i file statici
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+# Redirects con wildcard per query parameters
 [[redirects]]
-  from = "/storico.html"
+  from = "/storico.html*"
   to = "/storico.html"
   status = 200
+  force = false
 
+[[redirects]]
+  from = "/utenti.html*"
+  to = "/utenti.html"
+  status = 200
+  force = false
+
+# Gestione degli asset
+[[redirects]]
+  from = "/assets/*"
+  to = "/assets/:splat"
+  status = 200
+
+# Fallback per SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"

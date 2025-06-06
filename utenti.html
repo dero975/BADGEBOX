@@ -73,6 +73,64 @@
       background-color: #4338ca;
     }
 
+    .home-link {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: #6366f1;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .home-link:hover {
+      background-color: #4f46e5;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      .form-riga {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      
+      .form-riga input,
+      .form-riga button {
+        width: calc(50% - 4px);
+        min-width: 120px;
+      }
+      
+      #pin {
+        width: calc(25% - 4px);
+        min-width: 60px;
+      }
+      
+      .container {
+        padding: 10px;
+      }
+      
+      table th,
+      table td {
+        padding: 8px 6px;
+        font-size: 13px;
+      }
+      
+      .home-link {
+        top: 10px;
+        left: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+    }
+
     table {
       width: 100%;
       border-collapse: separate;
@@ -112,10 +170,29 @@
       font-size: 16px;
       cursor: pointer;
       margin: 0 2px;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    table td button:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .icona-storico {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .icona-storico:hover {
+      transform: scale(1.1);
     }
   </style>
 </head>
 <body>
+  <a href="index.html" class="home-link">🏠 Home</a>
   <div class="container">
     <h1>Archivio Dipendenti</h1>
 
@@ -168,14 +245,22 @@
         const riga = document.createElement("tr");
 
         riga.innerHTML = `
-          <td><a href="storico.html?pin=${utente.pin}" title="Storico"><img src="assets/icons/orologio.png" alt="Storico" style="width: 24px; height: 24px;" /></a></td>
+          <td>
+            <a href="storico.html?pin=${utente.pin}" title="Storico">
+              <img src="assets/icons/orologio.png" alt="Storico" class="icona-storico" />
+            </a>
+          </td>
           <td>${utente.pin.padStart(2, "0")}</td>
           <td>${utente.nome}</td>
           <td>${utente.cognome}</td>
           <td>${utente.email}</td>
           <td>
-            <button type="button" onclick="modificaUtente('${utente.id}', '${utente.nome}', '${utente.cognome}', '${utente.pin}', '${utente.email}')" title="Modifica">✏️</button>
-            <button type="button" onclick="eliminaUtente('${utente.id}')" title="Elimina">❌</button>
+            <button type="button" onclick="modificaUtente('${utente.id}', '${utente.nome}', '${utente.cognome}', '${utente.pin}', '${utente.email}')" title="Modifica">
+              ✏️
+            </button>
+            <button type="button" onclick="eliminaUtente('${utente.id}')" title="Elimina">
+              ❌
+            </button>
           </td>
         `;
         tbody.appendChild(riga);

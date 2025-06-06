@@ -364,8 +364,14 @@
       if (error) {
         console.error("Errore nel recupero timbrature:", error);
         console.error("Dettagli errore:", JSON.stringify(error, null, 2));
-        alert("Errore nel recupero timbrature: " + error.message);
-        return;
+        
+        // Ignora errori di schema cache ma mostra altri errori
+        if (error.code !== 'PGRST202') {
+          alert("Errore nel recupero timbrature: " + error.message);
+          return;
+        } else {
+          console.log("Errore schema cache ignorato, continuando...");
+        }
       }
       
       console.log("Dati timbrature ricevuti:", data);
@@ -407,10 +413,8 @@
         let oreLavorate = "—";
         if (timbraturaEntrata && timbraturaUscita) {
           // Gestisce diversi nomi di colonna per l'ora con controllo più robusto
-          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.time || timbraturaEntrata.timestamp || 
-                           timbraturaEntrata.orario || timbraturaEntrata.hour || null;
-          const oraUscita = timbraturaUscita.ora || timbraturaUscita.time || timbraturaUscita.timestamp || 
-                          timbraturaUscita.orario || timbraturaUscita.hour || null;
+          const oraEntrata = timbraturaEntrata.ora || null;
+          const oraUscita = timbraturaUscita.ora || null;
           
           if (oraEntrata && oraUscita) {
             const inizio = new Date(`1970-01-01T${oraEntrata}`);
@@ -424,15 +428,8 @@
           }
         }
         const riga = document.createElement("tr");
-        // Funzione helper per estrarre l'ora da una timbratura
-        const estraiOra = (timbratura) => {
-          if (!timbratura) return null;
-          return timbratura.ora || timbratura.time || timbratura.timestamp || 
-                 timbratura.orario || timbratura.hour || null;
-        };
-        
-        const oraEntrataDisplay = estraiOra(timbraturaEntrata) ? estraiOra(timbraturaEntrata).slice(0,5) : '—';
-        const oraUscitaDisplay = estraiOra(timbraturaUscita) ? estraiOra(timbraturaUscita).slice(0,5) : '—';
+        const oraEntrataDisplay = timbraturaEntrata && timbraturaEntrata.ora ? timbraturaEntrata.ora.slice(0,5) : '—';
+        const oraUscitaDisplay = timbraturaUscita && timbraturaUscita.ora ? timbraturaUscita.ora.slice(0,5) : '—';
           
         riga.innerHTML = `
           <td style="text-align: left;">${dataFormattata}</td>
@@ -494,10 +491,10 @@
       });
       timbraturaEntrataCorrente = timbratureOggi.find(t => t.tipo === "entrata") || null;
       timbraturaUscitaCorrente = timbratureOggi.find(t => t.tipo === "uscita") || null;
-      const oraEntrata = timbraturaEntrataCorrente && (timbraturaEntrataCorrente.ora || timbraturaEntrataCorrente.time || timbraturaEntrataCorrente.timestamp) ? 
-        (timbraturaEntrataCorrente.ora || timbraturaEntrataCorrente.time || timbraturaEntrataCorrente.timestamp).slice(0,5) : "";
-      const oraUscita = timbraturaUscitaCorrente && (timbraturaUscitaCorrente.ora || timbraturaUscitaCorrente.time || timbraturaUscitaCorrente.timestamp) ? 
-        (timbraturaUscitaCorrente.ora || timbraturaUscitaCorrente.time || timbraturaUscitaCorrente.timestamp).slice(0,5) : "";
+      const oraEntrata = timbraturaEntrataCorrente && timbraturaEntrataCorrente.ora ? 
+        timbraturaEntrataCorrente.ora.slice(0,5) : "";
+      const oraUscita = timbraturaUscitaCorrente && timbraturaUscitaCorrente.ora ? 
+        timbraturaUscitaCorrente.ora.slice(0,5) : "";
       
       modaleEntrataInput.value = oraEntrata;
       modaleUscitaInput.value = oraUscita;
@@ -535,15 +532,9 @@
           dataDaUsare = d.toISOString().split("T")[0];
         }
         if (timbraturaCorrente && timbraturaCorrente.id) {
-          // Aggiornamento record esistente - usa il nome colonna corretto
-          const nomeColonnaOra = timbraturaCorrente.ora ? 'ora' : 
-                                 timbraturaCorrente.time ? 'time' : 
-                                 timbraturaCorrente.timestamp ? 'timestamp' : 
-                                 timbraturaCorrente.orario ? 'orario' : 
-                                 'ora'; // fallback
-          
+          // Aggiornamento record esistente
           const updateData = {
-            [nomeColonnaOra]: valore,
+            ora: valore,
             giornologico: dataDaUsare,
             data: dataCorrenteModale
           };
@@ -559,19 +550,14 @@
             alert("Errore aggiornamento: " + error.message);
           }
         } else {
-          // Inserimento nuovo record - determina il nome corretto della colonna ora
-          const nomeColonnaOra = timbrature.length > 0 && timbrature[0].time ? 'time' :
-                                 timbrature.length > 0 && timbrature[0].timestamp ? 'timestamp' :
-                                 timbrature.length > 0 && timbrature[0].orario ? 'orario' :
-                                 'ora'; // fallback
-          
+          // Inserimento nuovo record
           const insertData = {
             tipo: tipo,
             pin: pinVal,
             nome: nomeVal,
             cognome: cognomeVal,
             data: dataCorrenteModale,
-            [nomeColonnaOra]: valore,
+            ora: valore,
             giornologico: dataDaUsare
           };
           

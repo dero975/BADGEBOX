@@ -505,27 +505,40 @@
           dataDaUsare = d.toISOString().split("T")[0];
         }
         if (timbraturaCorrente && timbraturaCorrente.id) {
-          const { error } = await supabase
+          // Aggiornamento record esistente
+          const { data, error } = await supabase
             .from("timbrature")
             .update({
               ora: valore,
-              giornologico: dataDaUsare
+              giornologico: dataDaUsare,
+              data: dataCorrenteModale
             })
-            .eq("id", timbraturaCorrente.id);
-          if (error) alert("Errore aggiornamento: " + error.message);
+            .eq("id", timbraturaCorrente.id)
+            .select();
+          
+          if (error) {
+            console.error("Errore aggiornamento:", error);
+            alert("Errore aggiornamento: " + error.message);
+          }
         } else {
-          const { error } = await supabase
+          // Inserimento nuovo record
+          const { data, error } = await supabase
             .from("timbrature")
             .insert([{
-              tipo,
+              tipo: tipo,
               pin: pinVal,
               nome: nomeVal,
               cognome: cognomeVal,
               data: dataCorrenteModale,
               ora: valore,
               giornologico: dataDaUsare
-            }]);
-          if (error) alert("Errore inserimento: " + error.message);
+            }])
+            .select();
+          
+          if (error) {
+            console.error("Errore inserimento:", error);
+            alert("Errore inserimento: " + error.message);
+          }
         }
       }
       await upsertTimbratura("entrata", entrataVal, timbraturaEntrataCorrente);

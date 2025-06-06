@@ -18,3 +18,22 @@ externalPort = 80
 [[ports]]
 localPort = 5174
 externalPort = 3000
+
+[workflows]
+
+[[workflows.workflow]]
+name = "Aggiorna GitHub e Deploy"
+author = 42586508
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git add ."
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git commit -m \"Aggiornamento manuale del progetto\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git push origin main"

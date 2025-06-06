@@ -352,7 +352,7 @@
       }
       const { data, error } = await supabase
         .from("timbrature")
-        .select("id, pin, nome, cognome, tipo, data, ora, giornologico")
+        .select("*")
         .eq("pin", pin)
         .gte("giornologico", dataInizio.value)
         .lte("giornologico", dataFine.value)
@@ -399,8 +399,9 @@
         const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
         let oreLavorate = "—";
         if (timbraturaEntrata && timbraturaUscita) {
-          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.time || null;
-          const oraUscita = timbraturaUscita.ora || timbraturaUscita.time || null;
+          // Gestisce diversi nomi di colonna per l'ora
+          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.time || timbraturaEntrata.timestamp || null;
+          const oraUscita = timbraturaUscita.ora || timbraturaUscita.time || timbraturaUscita.timestamp || null;
           
           if (oraEntrata && oraUscita) {
             const inizio = new Date(`1970-01-01T${oraEntrata}`);
@@ -414,10 +415,10 @@
           }
         }
         const riga = document.createElement("tr");
-        const oraEntrataDisplay = timbraturaEntrata && (timbraturaEntrata.ora || timbraturaEntrata.time) ? 
-          (timbraturaEntrata.ora || timbraturaEntrata.time).slice(0,5) : '—';
-        const oraUscitaDisplay = timbraturaUscita && (timbraturaUscita.ora || timbraturaUscita.time) ? 
-          (timbraturaUscita.ora || timbraturaUscita.time).slice(0,5) : '—';
+        const oraEntrataDisplay = timbraturaEntrata && (timbraturaEntrata.ora || timbraturaEntrata.time || timbraturaEntrata.timestamp) ? 
+          (timbraturaEntrata.ora || timbraturaEntrata.time || timbraturaEntrata.timestamp).slice(0,5) : '—';
+        const oraUscitaDisplay = timbraturaUscita && (timbraturaUscita.ora || timbraturaUscita.time || timbraturaUscita.timestamp) ? 
+          (timbraturaUscita.ora || timbraturaUscita.time || timbraturaUscita.timestamp).slice(0,5) : '—';
           
         riga.innerHTML = `
           <td style="text-align: left;">${dataFormattata}</td>
@@ -479,8 +480,13 @@
       });
       timbraturaEntrataCorrente = timbratureOggi.find(t => t.tipo === "entrata") || null;
       timbraturaUscitaCorrente = timbratureOggi.find(t => t.tipo === "uscita") || null;
-      modaleEntrataInput.value = timbraturaEntrataCorrente && timbraturaEntrataCorrente.ora ? timbraturaEntrataCorrente.ora.slice(0,5) : "";
-      modaleUscitaInput.value = timbraturaUscitaCorrente && timbraturaUscitaCorrente.ora ? timbraturaUscitaCorrente.ora.slice(0,5) : "";
+      const oraEntrata = timbraturaEntrataCorrente && (timbraturaEntrataCorrente.ora || timbraturaEntrataCorrente.time || timbraturaEntrataCorrente.timestamp) ? 
+        (timbraturaEntrataCorrente.ora || timbraturaEntrataCorrente.time || timbraturaEntrataCorrente.timestamp).slice(0,5) : "";
+      const oraUscita = timbraturaUscitaCorrente && (timbraturaUscitaCorrente.ora || timbraturaUscitaCorrente.time || timbraturaUscitaCorrente.timestamp) ? 
+        (timbraturaUscitaCorrente.ora || timbraturaUscitaCorrente.time || timbraturaUscitaCorrente.timestamp).slice(0,5) : "";
+      
+      modaleEntrataInput.value = oraEntrata;
+      modaleUscitaInput.value = oraUscita;
       modalOverlay.style.display = "flex";
     }
     function chiudiModale() {

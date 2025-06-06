@@ -20,6 +20,7 @@ localPort = 5174
 externalPort = 3000
 
 [workflows]
+runButton = "Run"
 
 [[workflows.workflow]]
 name = "Aggiorna GitHub e Deploy"
@@ -37,3 +38,12 @@ args = "git commit -m \"Aggiornamento manuale del progetto\""
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "git push origin main"
+
+[[workflows.workflow]]
+name = "Run"
+author = 42586508
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "vite"

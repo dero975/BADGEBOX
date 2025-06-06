@@ -114,9 +114,13 @@
     }
     table th, table td {
       border-bottom: 1px solid #334155;
+      border-right: 1px solid #334155;
       padding: 14px 12px;
       text-align: center;
       color: white;
+    }
+    table th:last-child, table td:last-child {
+      border-right: none;
     }
     /* Righe dei giorni con altezza ridotta del 30% */
     table tbody tr:not(:last-child) td {

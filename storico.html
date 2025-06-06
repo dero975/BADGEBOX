@@ -491,13 +491,14 @@
       }
       const rigaTotale = document.createElement("tr");
       rigaTotale.style.fontWeight = "bold";
-      rigaTotale.style.backgroundColor = "#1f3a56";
+      rigaTotale.style.backgroundColor = "#1f3a56 !important";
       rigaTotale.style.color = "white";
       rigaTotale.innerHTML = `
-        <td style="text-align:left;">TOTALE MENSILE</td>
-        <td></td><td></td>
-        <td style="color: #ffff99;">${totaleMensileOre.toFixed(2)}</td>
-        <td></td>
+        <td style="text-align:left; background-color: #1f3a56 !important;">TOTALE MENSILE</td>
+        <td style="background-color: #1f3a56 !important;"></td>
+        <td style="background-color: #1f3a56 !important;"></td>
+        <td style="color: #ffff99; background-color: #1f3a56 !important;">${totaleMensileOre.toFixed(2)}</td>
+        <td style="background-color: #1f3a56 !important;"></td>
       `;
       tbody.appendChild(rigaTotale);
       aggiungiListenerModifica();

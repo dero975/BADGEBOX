@@ -319,6 +319,9 @@
       
       dataInizio.value = dataInizioString;
       dataFine.value = dataFineString;
+      
+      console.log(`Range aggiornato: dal ${dataInizioString} al ${dataFineString}`);
+      console.log(`Ultimo giorno del mese: ${ultimoGiorno}`);
     }
     selectFiltro.addEventListener("change", () => {
       aggiornaRange(selectFiltro.value);
@@ -360,10 +363,19 @@
     }
     function renderizzaTabella() {
       tbody.innerHTML = "";
-      const start = new Date(dataInizio.value);
-      const end = new Date(dataFine.value);
+      
+      if (!dataInizio.value || !dataFine.value) {
+        console.log("Date non impostate correttamente");
+        return;
+      }
+      
+      const start = new Date(dataInizio.value + 'T00:00:00');
+      const end = new Date(dataFine.value + 'T00:00:00');
       const giorniSettimana = ["Domenica", "Lunedi", "Martedi", "Mercoledi", "Giovedi", "Venerdi", "Sabato"];
       let totaleMensileOre = 0;
+      
+      console.log(`Rendering tabella dal ${start.toISOString().split('T')[0]} al ${end.toISOString().split('T')[0]}`);
+      
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const current = new Date(d);
         const dataISO = current.toISOString().split("T")[0];

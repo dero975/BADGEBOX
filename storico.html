@@ -14,7 +14,7 @@
       margin: 0;
       padding: 0;
     }
-    
+
     /* Stili tabella */
     .titolo-piccolo {
       text-align: center;
@@ -58,7 +58,7 @@
       background-color: #1e293b;
       color: white;
     }
-    
+
     .filtro-temporale select {
       min-width: 200px;
       width: auto;
@@ -307,7 +307,7 @@
       const oggi = new Date();
       let anno = oggi.getFullYear();
       let meseIndice = oggi.getMonth();
-      
+
       if (mese === "precedente") {
         meseIndice -= 1;
         if (meseIndice < 0) {
@@ -315,16 +315,16 @@
           anno -= 1;
         }
       }
-      
+
       // Sempre dal primo all'ultimo giorno del mese
       const meseString = String(meseIndice + 1).padStart(2, "0");
       const dataInizioString = `${anno}-${meseString}-01`;
       const ultimoGiorno = new Date(anno, meseIndice + 1, 0).getDate();
       const dataFineString = `${anno}-${meseString}-${String(ultimoGiorno).padStart(2, "0")}`;
-      
+
       dataInizio.value = dataInizioString;
       dataFine.value = dataFineString;
-      
+
       console.log(`Range aggiornato: dal ${dataInizioString} al ${dataFineString}`);
       console.log(`Ultimo giorno del mese: ${ultimoGiorno}`);
     }
@@ -351,7 +351,7 @@
         intestazione.textContent = `${dipendente.nome} ${dipendente.cognome}`;
       }
       console.log("Eseguendo query timbrature per PIN:", pin, "Range:", dataInizio.value, "-", dataFine.value);
-      
+
       const { data, error } = await supabase
         .from("timbrature")
         .select("*")
@@ -360,11 +360,11 @@
         .lte("giornologico", dataFine.value)
         .order("giornologico", { ascending: true })
         .order("tipo", { ascending: true });
-        
+
       if (error) {
         console.error("Errore nel recupero timbrature:", error);
         console.error("Dettagli errore:", JSON.stringify(error, null, 2));
-        
+
         // Ignora errori di schema cache ma mostra altri errori
         if (error.code !== 'PGRST202') {
           alert("Errore nel recupero timbrature: " + error.message);
@@ -373,7 +373,7 @@
           console.log("Errore schema cache ignorato, continuando...");
         }
       }
-      
+
       console.log("Dati timbrature ricevuti:", data);
       console.log("Struttura primo record:", data.length > 0 ? Object.keys(data[0]) : "Nessun record");
       timbrature = data || [];
@@ -381,19 +381,19 @@
     }
     function renderizzaTabella() {
       tbody.innerHTML = "";
-      
+
       if (!dataInizio.value || !dataFine.value) {
         console.log("Date non impostate correttamente");
         return;
       }
-      
+
       const start = new Date(dataInizio.value + 'T00:00:00');
       const end = new Date(dataFine.value + 'T00:00:00');
       const giorniSettimana = ["Domenica", "Lunedi", "Martedi", "Mercoledi", "Giovedi", "Venerdi", "Sabato"];
       let totaleMensileOre = 0;
-      
+
       console.log(`Rendering tabella dal ${start.toISOString().split('T')[0]} al ${end.toISOString().split('T')[0]}`);
-      
+
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const current = new Date(d);
         const dataISO = current.toISOString().split("T")[0];
@@ -408,14 +408,16 @@
           }
           return gLogico === dataISO;
         });
+
         const timbraturaEntrata = timbratureOggi.find(t => t.tipo === "entrata") || null;
         const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
+
         let oreLavorate = "—";
         if (timbraturaEntrata && timbraturaUscita) {
-          // Gestisce diversi nomi di colonna per l'ora con controllo più robusto
-          const oraEntrata = timbraturaEntrata.ora || null;
-          const oraUscita = timbraturaUscita.ora || null;
-          
+          // Gestisce diversi nomi di colonna per l'ora
+          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time || null;
+          const oraUscita = timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time || null;
+
           if (oraEntrata && oraUscita) {
             const inizio = new Date(`1970-01-01T${oraEntrata}`);
             const fine = new Date(`1970-01-01T${oraUscita}`);
@@ -428,9 +430,9 @@
           }
         }
         const riga = document.createElement("tr");
-        const oraEntrataDisplay = timbraturaEntrata && timbraturaEntrata.ora ? timbraturaEntrata.ora.slice(0,5) : '—';
-        const oraUscitaDisplay = timbraturaUscita && timbraturaUscita.ora ? timbraturaUscita.ora.slice(0,5) : '—';
-          
+        const oraEntrataDisplay = timbraturaEntrata && (timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time) ? (timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time).slice(0,5) : '—';
+        const oraUscitaDisplay = timbraturaUscita && (timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time) ? (timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time).slice(0,5) : '—';
+
         riga.innerHTML = `
           <td style="text-align: left;">${dataFormattata}</td>
           <td>${oraEntrataDisplay}</td>
@@ -491,11 +493,11 @@
       });
       timbraturaEntrataCorrente = timbratureOggi.find(t => t.tipo === "entrata") || null;
       timbraturaUscitaCorrente = timbratureOggi.find(t => t.tipo === "uscita") || null;
-      const oraEntrata = timbraturaEntrataCorrente && timbraturaEntrataCorrente.ora ? 
-        timbraturaEntrataCorrente.ora.slice(0,5) : "";
-      const oraUscita = timbraturaUscitaCorrente && timbraturaUscitaCorrente.ora ? 
-        timbraturaUscitaCorrente.ora.slice(0,5) : "";
-      
+      const oraEntrata = timbraturaEntrataCorrente && (timbraturaEntrataCorrente.ora || timbraturaEntrataCorrente.ore || timbraturaEntrataCorrente.time) ? 
+        (timbraturaEntrataCorrente.ora || timbraturaEntrataCorrente.ore || timbraturaEntrataCorrente.time).slice(0,5) : "";
+      const oraUscita = timbraturaUscitaCorrente && (timbraturaUscitaCorrente.ora || timbraturaUscitaCorrente.ore || timbraturaUscitaCorrente.time) ? 
+        (timbraturaUscitaCorrente.ora || timbraturaUscitaCorrente.ore || timbraturaUscitaCorrente.time).slice(0,5) : "";
+
       modaleEntrataInput.value = oraEntrata;
       modaleUscitaInput.value = oraUscita;
       modalOverlay.style.display = "flex";
@@ -538,13 +540,13 @@
             giornologico: dataDaUsare,
             data: dataCorrenteModale
           };
-          
+
           const { data, error } = await supabase
             .from("timbrature")
             .update(updateData)
             .eq("id", timbraturaCorrente.id)
             .select();
-          
+
           if (error) {
             console.error("Errore aggiornamento:", error);
             alert("Errore aggiornamento: " + error.message);
@@ -560,12 +562,12 @@
             ora: valore,
             giornologico: dataDaUsare
           };
-          
+
           const { data, error } = await supabase
             .from("timbrature")
             .insert([insertData])
             .select();
-          
+
           if (error) {
             console.error("Errore inserimento:", error);
             alert("Errore inserimento: " + error.message);
@@ -657,16 +659,20 @@
         const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
         let oreLavorate = "—";
         if (timbraturaEntrata && timbraturaUscita) {
-          const inizio = new Date(`1970-01-01T${timbraturaEntrata.ora}`);
-          const fine = new Date(`1970-01-01T${timbraturaUscita.ora}`);
-          if (fine < inizio) fine.setDate(fine.getDate() + 1);
-          const diffMs = fine - inizio;
-          const h = Math.floor(diffMs / (1000 * 60 * 60));
-          const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-          oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
-          totaleOre += h + m / 60;
+          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time || null;
+          const oraUscita = timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time || null;
+          if (oraEntrata && oraUscita) {
+            const inizio = new Date(`1970-01-01T${oraEntrata}`);
+            const fine = new Date(`1970-01-01T${oraUscita}`);
+            if (fine < inizio) fine.setDate(fine.getDate() + 1);
+            const diffMs = fine - inizio;
+            const h = Math.floor(diffMs / (1000 * 60 * 60));
+            const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
+            totaleOre += h + m / 60;
+          }
         }
-        dataPerExport.push([dataFormattata, timbraturaEntrata && timbraturaEntrata.ora ? timbraturaEntrata.ora.slice(0,5) : "—", timbraturaUscita && timbraturaUscita.ora ? timbraturaUscita.ora.slice(0,5) : "—", oreLavorate]);
+        dataPerExport.push([dataFormattata, timbraturaEntrata && (timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time) ? (timbraturaEntrata.ora || timbraturaEntrata.ore || timbraturaEntrata.time).slice(0,5) : "—", timbraturaUscita && (timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time) ? (timbraturaUscita.ora || timbraturaUscita.ore || timbraturaUscita.time).slice(0,5) : "—", oreLavorate]);
       }
       // Riga totale ore (ultima)
       dataPerExport.push(["TOTALE MENSILE", "", "", totaleOre.toFixed(2)]);

@@ -350,6 +350,8 @@
         dipendente = datiUtente;
         intestazione.textContent = `${dipendente.nome} ${dipendente.cognome}`;
       }
+      console.log("Eseguendo query timbrature per PIN:", pin, "Range:", dataInizio.value, "-", dataFine.value);
+      
       const { data, error } = await supabase
         .from("timbrature")
         .select("*")
@@ -358,11 +360,16 @@
         .lte("giornologico", dataFine.value)
         .order("giornologico", { ascending: true })
         .order("tipo", { ascending: true });
+        
       if (error) {
-        console.error("Errore nel recupero timbrature:", error.message);
+        console.error("Errore nel recupero timbrature:", error);
+        console.error("Dettagli errore:", JSON.stringify(error, null, 2));
         alert("Errore nel recupero timbrature: " + error.message);
         return;
       }
+      
+      console.log("Dati timbrature ricevuti:", data);
+      console.log("Struttura primo record:", data.length > 0 ? Object.keys(data[0]) : "Nessun record");
       timbrature = data || [];
       renderizzaTabella();
     }
@@ -399,9 +406,11 @@
         const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
         let oreLavorate = "—";
         if (timbraturaEntrata && timbraturaUscita) {
-          // Gestisce diversi nomi di colonna per l'ora
-          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.time || timbraturaEntrata.timestamp || null;
-          const oraUscita = timbraturaUscita.ora || timbraturaUscita.time || timbraturaUscita.timestamp || null;
+          // Gestisce diversi nomi di colonna per l'ora con controllo più robusto
+          const oraEntrata = timbraturaEntrata.ora || timbraturaEntrata.time || timbraturaEntrata.timestamp || 
+                           timbraturaEntrata.orario || timbraturaEntrata.hour || null;
+          const oraUscita = timbraturaUscita.ora || timbraturaUscita.time || timbraturaUscita.timestamp || 
+                          timbraturaUscita.orario || timbraturaUscita.hour || null;
           
           if (oraEntrata && oraUscita) {
             const inizio = new Date(`1970-01-01T${oraEntrata}`);
@@ -415,10 +424,15 @@
           }
         }
         const riga = document.createElement("tr");
-        const oraEntrataDisplay = timbraturaEntrata && (timbraturaEntrata.ora || timbraturaEntrata.time || timbraturaEntrata.timestamp) ? 
-          (timbraturaEntrata.ora || timbraturaEntrata.time || timbraturaEntrata.timestamp).slice(0,5) : '—';
-        const oraUscitaDisplay = timbraturaUscita && (timbraturaUscita.ora || timbraturaUscita.time || timbraturaUscita.timestamp) ? 
-          (timbraturaUscita.ora || timbraturaUscita.time || timbraturaUscita.timestamp).slice(0,5) : '—';
+        // Funzione helper per estrarre l'ora da una timbratura
+        const estraiOra = (timbratura) => {
+          if (!timbratura) return null;
+          return timbratura.ora || timbratura.time || timbratura.timestamp || 
+                 timbratura.orario || timbratura.hour || null;
+        };
+        
+        const oraEntrataDisplay = estraiOra(timbraturaEntrata) ? estraiOra(timbraturaEntrata).slice(0,5) : '—';
+        const oraUscitaDisplay = estraiOra(timbraturaUscita) ? estraiOra(timbraturaUscita).slice(0,5) : '—';
           
         riga.innerHTML = `
           <td style="text-align: left;">${dataFormattata}</td>

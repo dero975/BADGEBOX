@@ -722,8 +722,11 @@
         return;
       }
       
-      // Conferma prima dell'invio
-      if (!confirm(`Vuoi inviare lo storico timbrature a ${dipendente.email}?`)) {
+      // Conferma prima dell'invio con dettagli del periodo
+      const periodoFormattato = `${formatDataIT(dataInizio.value)} - ${formatDataIT(dataFine.value)}`;
+      const messaggioConferma = `Confermi l'invio dello storico timbrature?\n\nDestinatario: ${dipendente.email}\nDipendente: ${dipendente.nome} ${dipendente.cognome}\nPeriodo: ${periodoFormattato}`;
+      
+      if (!confirm(messaggioConferma)) {
         return;
       }
       

@@ -1,0 +1,60 @@
+run = "npm run dev"
+hidden = [".config"]
+modules = ["web", "nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+deploymentTarget = "static"
+publicDir = "."
+run = ["sh", "-c", "npm run dev"]
+
+[[deployment.rewrites]]
+from = "/utenti.html"
+to = "/utenti.html"
+
+[[deployment.rewrites]]
+from = "/storico.html"
+to = "/storico.html"
+
+[[deployment.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[[ports]]
+localPort = 5173
+externalPort = 80
+
+[[ports]]
+localPort = 5174
+externalPort = 3000
+
+[workflows]
+runButton = "Run"
+
+[[workflows.workflow]]
+name = "Aggiorna GitHub e Deploy"
+author = 42586508
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git add ."
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git commit -m \"Aggiornamento manuale del progetto\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git push origin main"
+
+[[workflows.workflow]]
+name = "Run"
+author = 42586508
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "vite"

@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storico Timbrature</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Sfondo generale */
+    body {
+      background-color: #0c1a2a;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Stili tabella */
+    .titolo-piccolo {
+      text-align: center;
+      color: #a0aec0;
+      font-size: 19.6px;
+      margin-bottom: 0;
+    }
+    .titolo-grande {
+      text-align: center;
+      font-size: 39.2px;
+      font-weight: bold;
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: white;
+    }
+    .filtro-temporale {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 10px;
+      flex-wrap: nowrap;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+    }
+
+    .filtro-temporale select {
+      flex: 1;
+      max-width: 300px;
+      padding: 12px 16px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      font-family: Arial, sans-serif;
+      font-weight: 400;
+      height: 48px;
+      line-height: 24px;
+      box-sizing: border-box;
+      background-color: #1e293b;
+      color: white;
+      min-width: 200px;
+      width: auto;
+    }
+    .data-container {
+      position: relative;
+      flex: 1;
+      max-width: 300px;
+    }
+    .filtro-temporale input[type="date"] {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      font-family: Arial, sans-serif;
+      font-weight: 400;
+      height: 48px;
+      line-height: 24px;
+      box-sizing: border-box;
+      background-color: #1e293b;
+      color: white;
+    }
+
+    /* Nasconde l'icona calendario nativa del browser */
+    .filtro-temporale input[type="date"]::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .filtro-temporale input[type="date"]::-moz-calendar-picker-indicator {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .icona-calendario-campo {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+
+    .container {
+      padding-bottom: 20px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 20px;
+    }
+    .tabella-wrapper {
+      background-color: #1e293b;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      margin-bottom: 10px;
+      padding: 13px;
+      overflow: hidden;
+    }
+    .tabella-container {
+      background-color: transparent;
+      border-radius: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background-color: transparent;
+      border-radius: 0;
+    }
+    table th, table td {
+      border-bottom: 1px solid #334155;
+      border-right: 1px solid #334155;
+      padding: 11px 12px;
+      text-align: center;
+      color: white;
+    }
+    table th:first-child, table td:first-child {
+      width: 20%;
+    }
+    table th:first-child, table td:first-child {
+      border-left: 1px solid #334155;
+    }
+    table th:last-child, table td:last-child {
+      border-right: 1px solid #334155;
+    }
+    /* Righe dei giorni con altezza ridotta del 20% */
+    table tbody tr:not(:last-child) td {
+      padding: 6px 12px;
+    }
+    table th {
+      background-color: #1f3a56;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    table td {
+      background-color: #1e293b;
+    }
+    table tr:last-child td {
+      border-bottom: none;
+    }
+    /* Colonna icona modifica */
+    .modifica-icon {
+      cursor: pointer;
+      user-select: none;
+      display: inline-block;
+      line-height: 1;
+      width: 20px;
+      height: 20px;
+    }
+    /* Modale overlay */
+    #modalOverlay {
+      position: fixed;
+      top:0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    /* Modale container */
+    #modal {
+      background: #1e2a38;
+      padding: 20px;
+      border-radius: 10px;
+      width: 400px;
+      max-width: 90%;
+      color: white;
+      box-sizing: border-box;
+      max-height: 90vh;
+      overflow-y: auto;
+      font-family: Arial, sans-serif;
+    }
+    #modal h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      text-transform: capitalize;
+      font-weight: 700;
+      font-size: 20px;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+    input[type="time"], input[type="date"] {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .modal-btns {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    button#btnSalva {
+      background-color: #1e90ff;
+      color: white;
+    }
+    button#btnElimina {
+      background-color: #dc3545;
+      color: white;
+    }
+    button#btnChiudi {
+      background-color: #666;
+      color: white;
+    }
+    /* Contenitore pulsanti in fondo alla tabella */
+    .pulsanti-basso {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      gap: 12px;
+      margin-top: 8px;
+      padding: 4px 0;
+    }
+    .pulsanti-basso button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #222;
+      background: #ddd;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.25s;
+      min-width: 80px;
+      justify-content: center;
+      height: 40px;
+    }
+    /* Modifica altezza tasto torna */
+    #torna-archivio {
+      height: 40px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 80px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #222;
+      background: #ddd;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .pulsanti-basso button:hover {
+      background: #1e90ff;
+      color: white;
+    }
+    .pulsanti-basso button img {
+      width: 24px;
+      height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <img src="assets/icons/logo.png" alt="BadgeBox Logo" style="position: fixed; top: 25px; right: calc(50% - 430px); width: 120px; height: auto; z-index: 1;" />
+  <div class="container" style="position: relative;">
+    <div style="position: relative; text-align: center; margin-bottom: 10px;">
+      <p class="titolo-piccolo">Storico Timbrature</p>
+      <h1 id="intestazione" class="titolo-grande">Nome Cognome</h1>
+    </div>
+    <div class="filtro-temporale">
+      <select id="filtro-mese">
+        <option value="corrente">Mese corrente</option>
+        <option value="precedente">Mese precedente</option>
+      </select>
+      <div class="data-container">
+        <input type="date" id="data-inizio" />
+        <img src="assets/icons/calendario.png" class="icona-calendario-campo" alt="Calendario" onclick="document.getElementById('data-inizio').showPicker()" />
+      </div>
+      <div class="data-container">
+        <input type="date" id="data-fine" />
+        <img src="assets/icons/calendario.png" class="icona-calendario-campo" alt="Calendario" onclick="document.getElementById('data-fine').showPicker()" />
+      </div>
+    </div>
+    <div class="tabella-wrapper">
+      <div class="tabella-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Entrata</th>
+              <th>Uscita</th>
+              <th>Ore</th>
+              <th>Modifica</th>
+            </tr>
+          </thead>
+          <tbody id="storico-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Pulsanti in fondo tabella -->
+    <div class="pulsanti-basso">
+      <button id="torna-archivio" title="Torna Archivio">
+        <img src="assets/icons/freccia.png" alt="Torna Archivio" />
+      </button>
+      <button id="btn-invia" title="Invia Mail">
+        <img src="assets/icons/invia.png" alt="Invia Mail" />
+      </button>
+      <button id="btn-esporta" title="Esporta Excel">
+        <img src="assets/icons/esporta.png" alt="Esporta Excel" />
+      </button>
+    </div>
+  </div>
+  <!-- Modale -->
+  <div id="modalOverlay">
+    <div id="modal">
+      <h2>Modifica Timbrature</h2>
+      <form id="modaleForm">
+        <label>Data:</label>
+        <input type="date" id="modale-data" disabled />
+        <label for="modale-entrata">Entrata:</label>
+        <input type="time" id="modale-entrata" />
+        <label for="modale-uscita">Uscita:</label>
+        <input type="time" id="modale-uscita" />
+        <div class="modal-btns">
+          <button type="button" id="btnSalva">Salva</button>
+          <button type="button" id="btnElimina">Elimina</button>
+          <button type="button" id="btnChiudi">Chiudi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const supabase = createClient(
+      "https://pylfpqitdogatlsndxtf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5bGZwcWl0ZG9nYXRsc25keHRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzU5OTcsImV4cCI6MjA2Mzk1MTk5N30.GXWmglDP7WcLSozta8UT6Ktd9XzIXSCxC5pJ4oWX3LU"
+    );
+    const intestazione = document.getElementById("intestazione");
+    const tbody = document.getElementById("storico-body");
+    const selectFiltro = document.getElementById("filtro-mese");
+    const dataInizio = document.getElementById("data-inizio");
+    const dataFine = document.getElementById("data-fine");
+    // Recupera il PIN dalla query string con gestione errori
+    const urlParams = new URLSearchParams(window.location.search);
+    let pin = urlParams.get("pin");
+    console.log("URL completa:", window.location.href);
+    console.log("Query string:", window.location.search);
+    console.log("PIN dalla URL:", pin);
+
+    // Debug per Netlify
+    if (!pin) {
+      console.warn("PIN non trovato nella URL, possibile problema di routing");
+      console.log("Location:", window.location);
+    }
+    let dipendente = null;
+    let timbrature = [];
+    function aggiornaRange(mese) {
+      const oggi = new Date();
+      let anno = oggi.getFullYear();
+      let meseIndice = oggi.getMonth();
+
+      if (mese === "precedente") {
+        meseIndice -= 1;
+        if (meseIndice < 0) {
+          meseIndice = 11;
+          anno -= 1;
+        }
+      }
+
+      // Sempre dal primo all'ultimo giorno del mese
+      const meseString = String(meseIndice + 1).padStart(2, "0");
+      const dataInizioString = `${anno}-${meseString}-01`;
+      const ultimoGiorno = new Date(anno, meseIndice + 1, 0).getDate();
+      const dataFineString = `${anno}-${meseString}-${String(ultimoGiorno).padStart(2, "0")}`;
+
+      dataInizio.value = dataInizioString;
+      dataFine.value = dataFineString;
+
+      console.log(`Range aggiornato: dal ${dataInizioString} al ${dataFineString}`);
+      console.log(`Ultimo giorno del mese: ${ultimoGiorno}`);
+    }
+    selectFiltro.addEventListener("change", () => {
+      aggiornaRange(selectFiltro.value);
+      caricaDati();
+    });
+    dataInizio.addEventListener("change", caricaDati);
+    dataFine.addEventListener("change", caricaDati);
+    async function caricaDati() {
+      if (!pin) return;
+      const { data: datiUtente, error: errUtente } = await supabase
+        .from("utenti")
+        .select("nome, cognome, email")
+        .eq("pin", pin)
+        .single();
+      if (errUtente) {
+        console.error("Errore recupero utente:", errUtente.message);
+        alert("Errore recupero utente: " + errUtente.message);
+        return;
+      }
+      if (datiUtente) {
+        dipendente = datiUtente;
+        intestazione.textContent = `${dipendente.nome} ${dipendente.cognome}`;
+      }
+      console.log("Eseguendo query timbrature per PIN:", pin, "Range:", dataInizio.value, "-", dataFine.value);
+
+      const { data, error } = await supabase
+        .from("timbrature")
+        .select("*")
+        .eq("pin", pin)
+        .gte("giornologico", dataInizio.value)
+        .lte("giornologico", dataFine.value)
+        .order("giornologico", { ascending: true })
+        .order("tipo", { ascending: true });
+
+      if (error) {
+        console.error("Errore nel recupero timbrature:", error);
+        console.error("Dettagli errore:", JSON.stringify(error, null, 2));
+
+        // Ignora errori di schema cache ma mostra altri errori
+        if (error.code !== 'PGRST202') {
+          alert("Errore nel recupero timbrature: " + error.message);
+          return;
+        } else {
+          console.log("Errore schema cache ignorato, continuando...");
+        }
+      }
+
+      console.log("Dati timbrature ricevuti:", data);
+      console.log("Struttura primo record:", data.length > 0 ? Object.keys(data[0]) : "Nessun record");
+      timbrature = data || [];
+      renderizzaTabella();
+    }
+    function renderizzaTabella() {
+      tbody.innerHTML = "";
+
+      if (!dataInizio.value || !dataFine.value) {
+        console.log("Date non impostate correttamente");
+        return;
+      }
+
+      const start = new Date(dataInizio.value + 'T00:00:00');
+      const end = new Date(dataFine.value + 'T00:00:00');
+      const giorniSettimana = ["Domenica", "Lunedi", "Martedi", "Mercoledi", "Giovedi", "Venerdi", "Sabato"];
+      let totaleMensileOre = 0;
+
+      console.log(`Rendering tabella dal ${start.toISOString().split('T')[0]} al ${end.toISOString().split('T')[0]}`);
+
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const current = new Date(d);
+        const dataISO = current.toISOString().split("T")[0];
+        const giornoSettimana = giorniSettimana[current.getDay()];
+        const giornoNumero = current.getDate().toString().padStart(2, "0");
+        const dataFormattata = `${giornoNumero}  ${giornoSettimana}`;
+        const timbratureOggi = timbrature.filter(t => {
+          if (!t.giornologico) return false;
+          let gLogico = t.giornologico;
+          if (typeof gLogico !== "string") {
+            gLogico = new Date(gLogico).toISOString().split("T")[0];
+          }
+          console.log(`Confronto: ${gLogico} === ${dataISO} per PIN ${t.pin}`);
+          return gLogico === dataISO;
+        });
+
+        const timbraturaEntrata = timbratureOggi.find(t => t.tipo === "entrata") || null;
+        const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
+
+        let oreLavorate = "—";
+        if (timbraturaEntrata && timbraturaUscita) {
+          // Usa il nome corretto della colonna 'ore'
+          const oraEntrata = timbraturaEntrata.ore;
+          const oraUscita = timbraturaUscita.ore;
+
+          if (oraEntrata && oraUscita) {
+            const inizio = new Date(`1970-01-01T${oraEntrata}`);
+            const fine = new Date(`1970-01-01T${oraUscita}`);
+            if (fine < inizio) fine.setDate(fine.getDate() + 1);
+            const diffMs = fine - inizio;
+            const h = Math.floor(diffMs / (1000 * 60 * 60));
+            const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
+            totaleMensileOre += h + m / 60;
+          }
+        }
+        const riga = document.createElement("tr");
+        const oraEntrataDisplay = timbraturaEntrata && timbraturaEntrata.ore ? timbraturaEntrata.ore.slice(0,5) : '—';
+        const oraUscitaDisplay = timbraturaUscita && timbraturaUscita.ore ? timbraturaUscita.ore.slice(0,5) : '—';
+
+        riga.innerHTML = `
+          <td style="text-align: left;">${dataFormattata}</td>
+          <td>${oraEntrataDisplay}</td>
+          <td>${oraUscitaDisplay}</td>
+          <td style="color: #ffff99;">${oreLavorate}</td>
+          <td>
+            <img
+              src="assets/icons/matita-colorata.png"
+              class="modifica-icon"
+              data-data="${dataISO}"
+              title="Modifica"
+              alt="Modifica"
+            />
+          </td>
+        `;
+        tbody.appendChild(riga);
+      }
+      const rigaTotale = document.createElement("tr");
+      rigaTotale.style.fontWeight = "bold";
+      rigaTotale.style.backgroundColor = "#1f3a56 !important";
+      rigaTotale.style.color = "white";
+      rigaTotale.innerHTML = `
+        <td style="text-align:left; background-color: #1f3a56 !important;">TOTALE MENSILE</td>
+        <td style="background-color: #1f3a56 !important;"></td>
+        <td style="background-color: #1f3a56 !important;"></td>
+        <td style="color: #ffff99; background-color: #1f3a56 !important;">${totaleMensileOre.toFixed(2)}</td>
+        <td style="background-color: #1f3a56 !important;"></td>
+      `;
+      tbody.appendChild(rigaTotale);
+      aggiungiListenerModifica();
+    }
+    function aggiungiListenerModifica() {
+      document.querySelectorAll(".modifica-icon").forEach(icon => {
+        icon.addEventListener("click", () => {
+          const dataSelezionata = icon.dataset.data;
+          apriModale(dataSelezionata);
+        });
+      });
+    }
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modaleDataInput = document.getElementById("modale-data");
+    const modaleEntrataInput = document.getElementById("modale-entrata");
+    const modaleUscitaInput = document.getElementById("modale-uscita");
+    const btnSalva = document.getElementById("btnSalva");
+    const btnElimina = document.getElementById("btnElimina");
+    const btnChiudi = document.getElementById("btnChiudi");
+    let dataCorrenteModale = null;
+    let timbraturaEntrataCorrente = null;
+    let timbraturaUscitaCorrente = null;
+    async function apriModale(dataSelezionata) {
+      dataCorrenteModale = dataSelezionata;
+      modaleDataInput.value = dataSelezionata;
+      const timbratureOggi = timbrature.filter(t => {
+        let gLogico = t.giornologico;
+        if (typeof gLogico !== "string") {
+          gLogico = new Date(gLogico).toISOString().split("T")[0];
+        }
+        return gLogico === dataSelezionata;
+      });
+      timbraturaEntrataCorrente = timbratureOggi.find(t => t.tipo === "entrata") || null;
+      timbraturaUscitaCorrente = timbratureOggi.find(t => t.tipo === "uscita") || null;
+      const oraEntrata = timbraturaEntrataCorrente && timbraturaEntrataCorrente.ore ? 
+        timbraturaEntrataCorrente.ore.slice(0,5) : "";
+      const oraUscita = timbraturaUscitaCorrente && timbraturaUscitaCorrente.ore ? 
+        timbraturaUscitaCorrente.ore.slice(0,5) : "";
+
+      modaleEntrataInput.value = oraEntrata;
+      modaleUscitaInput.value = oraUscita;
+      modalOverlay.style.display = "flex";
+    }
+    function chiudiModale() {
+      modalOverlay.style.display = "none";
+    }
+    async function salvaModifiche() {
+      const entrataVal = modaleEntrataInput.value;
+      const uscitaVal = modaleUscitaInput.value;
+      const pinVal = pin;
+      const nomeVal = dipendente ? dipendente.nome : "";
+      const cognomeVal = dipendente ? dipendente.cognome : "";
+
+      if (!dataCorrenteModale) {
+        alert("Data non valida");
+        return;
+      }
+
+      // Validazione: entrambi i campi devono essere compilati
+      if (!entrataVal || !uscitaVal) {
+        alert("Attenzione: Per salvare le modifiche è necessario compilare sia l'orario di ENTRATA che quello di USCITA.");
+        return;
+      }
+      async function upsertTimbratura(tipo, valore, timbraturaCorrente) {
+        if (!valore) {
+          if (timbraturaCorrente && timbraturaCorrente.id) {
+            const { error } = await supabase
+              .from("timbrature")
+              .delete()
+              .eq("id", timbraturaCorrente.id);
+            if (error) alert("Errore eliminazione: " + error.message);
+          }
+          return;
+        }
+        let dataDaUsare = dataCorrenteModale;
+        const [h] = valore.split(":").map(Number);
+        if (h < 2) {
+          let d = new Date(dataCorrenteModale);
+          d.setDate(d.getDate() - 1);
+          dataDaUsare = d.toISOString().split("T")[0];
+        }
+        if (timbraturaCorrente && timbraturaCorrente.id) {
+          // Aggiornamento record esistente
+          const updateData = {
+            ore: valore,
+            giornologico: dataDaUsare,
+            data: dataCorrenteModale
+          };
+
+          const { data, error } = await supabase
+            .from("timbrature")
+            .update(updateData)
+            .eq("id", timbraturaCorrente.id)
+            .select();
+
+          if (error) {
+            console.error("Errore aggiornamento:", error);
+            alert("Errore aggiornamento: " + error.message);
+          }
+        } else {
+          // Inserimento nuovo record
+          const insertData = {
+            tipo: tipo,
+            pin: pinVal,
+            nome: nomeVal,
+            cognome: cognomeVal,
+            data: dataCorrenteModale,
+            ore: valore,
+            giornologico: dataDaUsare
+          };
+
+          const { data, error } = await supabase
+            .from("timbrature")
+            .insert([insertData])
+            .select();
+
+          if (error) {
+            console.error("Errore inserimento:", error);
+            alert("Errore inserimento: " + error.message);
+          }
+        }
+      }
+      await upsertTimbratura("entrata", entrataVal, timbraturaEntrataCorrente);
+      await upsertTimbratura("uscita", uscitaVal, timbraturaUscitaCorrente);
+      await caricaDati();
+      chiudiModale();
+    }
+    async function eliminaTimbratureGiorno() {
+      if (!confirm("Sei sicuro di voler eliminare tutte le timbrature di questo giorno?")) return;
+      const daEliminare = timbrature.filter(t => {
+        let gLogico = t.giornologico;
+        if (typeof gLogico !== "string") {
+          gLogico = new Date(gLogico).toISOString().split("T")[0];
+        }
+        return gLogico === dataCorrenteModale;
+      });
+      for (const t of daEliminare) {
+        if (t.id) {
+          const { error } = await supabase
+            .from("timbrature")
+            .delete()
+            .eq("id", t.id);
+          if (error) alert("Errore eliminazione: " + error.message);
+        }
+      }
+      await caricaDati();
+      chiudiModale();
+    }
+    btnSalva.addEventListener("click", salvaModifiche);
+    btnElimina.addEventListener("click", eliminaTimbratureGiorno);
+    btnChiudi.addEventListener("click", chiudiModale);
+    document.getElementById("torna-archivio").addEventListener("click", () => {
+      window.location.href = "utenti.html";
+    });
+
+    // DISABILITO INVIO MAIL: bottone mostra solo alert
+    document.getElementById("btn-invia").addEventListener("click", () => {
+      alert("Funzione invio mail momentaneamente disabilitata.");
+    });
+
+    document.getElementById("btn-esporta").addEventListener("click", () => {
+      esportaExcel();
+    });
+
+    // Funzione esporta Excel aggiornata con formattazione e totali
+    function esportaExcel() {
+      if (!dipendente) {
+        alert("Utente non definito");
+        return;
+      }
+      // Funzione per convertire da YYYY-MM-DD a DD/MM/YYYY
+      function formatDataIT(dataISO) {
+        const [anno, mese, giorno] = dataISO.split("-");
+        return `${giorno}/${mese}/${anno}`;
+      }
+      // Crea un nuovo workbook e worksheet
+      const wb = XLSX.utils.book_new();
+      // Prepara i dati da esportare in tabella
+      const dataPerExport = [];
+      // Intestazioni personalizzate nome e periodo (righe 1 e 2)
+      dataPerExport.push([`Nome: ${dipendente.nome} ${dipendente.cognome}`]);
+      dataPerExport.push([`Periodo: ${formatDataIT(dataInizio.value)} - ${formatDataIT(dataFine.value)}`]);
+      dataPerExport.push([]); // riga vuota
+      // Riga intestazione colonna (riga 4)
+      dataPerExport.push(["Data", "Entrata", "Uscita", "Ore"]);
+      // Riempi righe dati e calcolo totale ore
+      let totaleOre = 0;
+      const giorniSettimana = ["Domenica", "Lunedi", "Martedi", "Mercoledi", "Giovedi", "Venerdi", "Sabato"];
+      // Ciclo per data nel range corretto (modificato)
+      for (let d = new Date(dataInizio.value); d <= new Date(dataFine.value); d.setDate(d.getDate() + 1)) {
+        const current = new Date(d);
+        const dataISO = current.toISOString().split("T")[0];
+        const giornoSettimana = giorniSettimana[current.getDay()];
+        const giornoNumero = current.getDate().toString().padStart(2, "0");
+        const dataFormattata = `${giornoNumero} ${giornoSettimana}`;
+        const timbratureOggi = timbrature.filter(t => {
+          if (!t.giornologico) return false;
+          let gLogico = t.giornologico;
+          if (typeof gLogico !== "string") {
+            gLogico = new Date(gLogico).toISOString().split("T")[0];
+          }
+          console.log(`Confronto: ${gLogico} === ${dataISO} per PIN ${t.pin}`);
+          return gLogico === dataISO;
+        });
+        const timbraturaEntrata = timbratureOggi.find(t => t.tipo === "entrata") || null;
+        const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
+        let oreLavorate = "—";
+        if (timbraturaEntrata && timbraturaUscita) {
+          const oraEntrata = timbraturaEntrata.ore;
+          const oraUscita = timbraturaUscita.ore;
+          if (oraEntrata && oraUscita) {
+            const inizio = new Date(`1970-01-01T${oraEntrata}`);
+            const fine = new Date(`1970-01-01T${oraUscita}`);
+            if (fine < inizio) fine.setDate(fine.getDate() + 1);
+            const diffMs = fine - inizio;
+            const h = Math.floor(diffMs / (1000 * 60 * 60));
+            const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
+            totaleOre += h + m / 60;
+          }
+        }
+        dataPerExport.push([dataFormattata, timbraturaEntrata && timbraturaEntrata.ore ? timbraturaEntrata.ore.slice(0,5) : "—", timbraturaUscita && timbraturaUscita.ore ? timbraturaUscita.ore.slice(0,5) : "—", oreLavorate]);
+      }
+      // Riga totale ore (ultima)
+      dataPerExport.push(["TOTALE MENSILE", "", "", totaleOre.toFixed(2)]);
+      // Crea worksheet dal data array
+      const ws = XLSX.utils.aoa_to_sheet(dataPerExport);
+      // Imposta larghezza colonne per migliore visibilità
+      ws["!cols"] = [
+        {wpx: 120},
+        {wpx: 80},
+        {wpx: 80},
+        {wpx: 80}
+      ];
+      // Aggiungi foglio al workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Storico Timbrature");
+      // Esporta file con nome dinamico
+      const nomeFile = `StoricoTimbrature_${dipendente.nome}_${dipendente.cognome}_${dataInizio.value}_to_${dataFine.value}.xlsx`;
+      XLSX.writeFile(wb, nomeFile);
+    }
+    window.addEventListener("load", () => {
+      aggiornaRange("corrente");
+      caricaDati();
+    });
+  </script>
+</body>
+</html>

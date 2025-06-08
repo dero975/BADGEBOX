@@ -44,7 +44,7 @@ args = "git add ."
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "git commit -m \"Aggiornamento manuale del progetto\""
+args = "git commit -m \"Aggiornamento automatico del progetto BADGEBOX\""
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

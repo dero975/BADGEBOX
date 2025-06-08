@@ -365,6 +365,8 @@
     </div>
   </div>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
     const supabase = createClient(
@@ -570,6 +572,13 @@
     let dataCorrenteModale = null;
     let timbraturaEntrataCorrente = null;
     let timbraturaUscitaCorrente = null;
+
+    // Funzione per convertire da YYYY-MM-DD a DD/MM/YYYY
+    function formatDataIT(dataISO) {
+      if (!dataISO) return '';
+      const [anno, mese, giorno] = dataISO.split('-');
+      return `${giorno}/${mese}/${anno}`;
+    }
     async function apriModale(dataSelezionata) {
       dataCorrenteModale = dataSelezionata;
       modaleDataInput.value = dataSelezionata;
@@ -703,10 +712,163 @@
       window.location.href = "utenti.html";
     });
 
-    // DISABILITO INVIO MAIL: bottone mostra solo alert
+    // Inizializza EmailJS
+    emailjs.init("YOUR_PUBLIC_KEY"); // Sostituire con la tua chiave pubblica EmailJS
+
+    // Funzione per inviare PDF via email
     document.getElementById("btn-invia").addEventListener("click", () => {
-      alert("Funzione invio mail momentaneamente disabilitata.");
+      if (!dipendente || !dipendente.email) {
+        alert("Email del dipendente non disponibile.");
+        return;
+      }
+      
+      // Conferma prima dell'invio
+      if (!confirm(`Vuoi inviare lo storico timbrature a ${dipendente.email}?`)) {
+        return;
+      }
+      
+      generaEInviaPDF();
     });
+
+    async function generaEInviaPDF() {
+      try {
+        // Mostra loading
+        const btnInvia = document.getElementById("btn-invia");
+        const originalText = btnInvia.innerHTML;
+        btnInvia.innerHTML = '<span style="color: orange;">Invio...</span>';
+        btnInvia.disabled = true;
+
+        // Genera PDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Intestazione PDF
+        doc.setFontSize(18);
+        doc.setFont(undefined, 'bold');
+        doc.text('STORICO TIMBRATURE', 105, 20, { align: 'center' });
+        
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Nome: ${dipendente.nome} ${dipendente.cognome}`, 20, 35);
+        doc.text(`Periodo: ${formatDataIT(dataInizio.value)} - ${formatDataIT(dataFine.value)}`, 20, 45);
+        doc.text(`Email: ${dipendente.email}`, 20, 55);
+        
+        // Tabella dati
+        let yPosition = 75;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        
+        // Intestazioni tabella
+        doc.text('Data', 20, yPosition);
+        doc.text('Entrata', 60, yPosition);
+        doc.text('Uscita', 90, yPosition);
+        doc.text('Ore', 120, yPosition);
+        
+        // Linea sotto intestazioni
+        doc.line(20, yPosition + 2, 180, yPosition + 2);
+        yPosition += 10;
+        
+        doc.setFont(undefined, 'normal');
+        
+        // Dati tabella
+        const giorniSettimana = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+        let totaleOre = 0;
+        
+        for (let d = new Date(dataInizio.value); d <= new Date(dataFine.value); d.setDate(d.getDate() + 1)) {
+          if (yPosition > 270) { // Nuova pagina se necessario
+            doc.addPage();
+            yPosition = 20;
+          }
+          
+          const current = new Date(d);
+          const dataISO = current.toISOString().split("T")[0];
+          const giornoSettimana = giorniSettimana[current.getDay()];
+          const giornoNumero = current.getDate().toString().padStart(2, "0");
+          const dataFormattata = `${giornoNumero} ${giornoSettimana}`;
+          
+          const timbratureOggi = timbrature.filter(t => {
+            if (!t.giornologico) return false;
+            let gLogico = t.giornologico;
+            if (typeof gLogico !== "string") {
+              gLogico = new Date(gLogico).toISOString().split("T")[0];
+            }
+            return gLogico === dataISO;
+          });
+          
+          const timbraturaEntrata = timbratureOggi.find(t => t.tipo === "entrata") || null;
+          const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
+          
+          let oreLavorate = "—";
+          if (timbraturaEntrata && timbraturaUscita) {
+            const oraEntrata = timbraturaEntrata.ore;
+            const oraUscita = timbraturaUscita.ore;
+            if (oraEntrata && oraUscita) {
+              const inizio = new Date(`1970-01-01T${oraEntrata}`);
+              const fine = new Date(`1970-01-01T${oraUscita}`);
+              if (fine < inizio) fine.setDate(fine.getDate() + 1);
+              const diffMs = fine - inizio;
+              const h = Math.floor(diffMs / (1000 * 60 * 60));
+              const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+              oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
+              totaleOre += h + m / 60;
+            }
+          }
+          
+          const oraEntrataDisplay = timbraturaEntrata && timbraturaEntrata.ore ? timbraturaEntrata.ore.slice(0,5) : '—';
+          const oraUscitaDisplay = timbraturaUscita && timbraturaUscita.ore ? timbraturaUscita.ore.slice(0,5) : '—';
+          
+          doc.text(dataFormattata, 20, yPosition);
+          doc.text(oraEntrataDisplay, 60, yPosition);
+          doc.text(oraUscitaDisplay, 90, yPosition);
+          doc.text(oreLavorate, 120, yPosition);
+          
+          yPosition += 8;
+        }
+        
+        // Totale
+        yPosition += 5;
+        doc.line(20, yPosition, 180, yPosition);
+        yPosition += 10;
+        doc.setFont(undefined, 'bold');
+        doc.text('TOTALE MENSILE:', 20, yPosition);
+        doc.text(`${totaleOre.toFixed(2)} ore`, 120, yPosition);
+        
+        // Converte PDF in base64
+        const pdfBase64 = doc.output('datauristring').split(',')[1];
+        
+        // Parametri per EmailJS
+        const templateParams = {
+          to_email: dipendente.email,
+          to_name: `${dipendente.nome} ${dipendente.cognome}`,
+          from_name: 'BADGEBOX Sistema Timbrature',
+          subject: `Storico Timbrature - ${dipendente.nome} ${dipendente.cognome}`,
+          message: `In allegato trovi il tuo storico timbrature per il periodo ${formatDataIT(dataInizio.value)} - ${formatDataIT(dataFine.value)}.`,
+          attachment: pdfBase64,
+          filename: `StoricoTimbrature_${dipendente.nome}_${dipendente.cognome}_${dataInizio.value}_to_${dataFine.value}.pdf`
+        };
+        
+        // Invia email tramite EmailJS
+        await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams);
+        
+        // Successo
+        btnInvia.innerHTML = '<span style="color: green;">✓ Inviato!</span>';
+        alert(`Storico inviato con successo a ${dipendente.email}`);
+        
+        setTimeout(() => {
+          btnInvia.innerHTML = originalText;
+          btnInvia.disabled = false;
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Errore invio email:', error);
+        alert('Errore durante l\'invio dell\'email. Riprova più tardi.');
+        
+        // Ripristina pulsante
+        const btnInvia = document.getElementById("btn-invia");
+        btnInvia.innerHTML = '<img src="assets/icons/invia.png" alt="Invia Mail" />';
+        btnInvia.disabled = false;
+      }
+    }
 
     document.getElementById("btn-esporta").addEventListener("click", () => {
       esportaExcel();

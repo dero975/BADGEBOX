@@ -775,7 +775,7 @@
           `${giornoNumero} ${giornoSettimana.slice(0,3)}` : 
           `${giornoNumero}  ${giornoSettimana}`;
 
-        // NUOVA LOGICA: Usa giornologico per raggruppare le timbrature
+        // Raggruppa TUTTE le timbrature per giorno logico (giornologico)
         const timbratureOggi = timbrature.filter(t => {
           if (!t.giornologico) return false;
           let giornoLogico = t.giornologico;
@@ -785,39 +785,19 @@
           return giornoLogico === dataISO;
         });
 
-        // Funzione per determinare se un orario è nella fascia lavorativa (08:00-04:59)
-        function isOrarioLavorativo(ore) {
-          if (!ore) return false;
-          const [h, m] = ore.split(":").map(Number);
-          const minuti = h * 60 + m;
-
-          // Fascia lavorativa: 08:00-23:59 + 00:00-04:59
-          // Esclusa fascia 05:00-07:59
-          return (minuti >= 480 && minuti <= 1439) || (minuti >= 0 && minuti <= 299);
-        }
-
-        // Filtra solo le timbrature nella fascia lavorativa
-        const timbratureLavorative = timbratureOggi.filter(t => isOrarioLavorativo(t.ore));
-
-        // Raggruppa e ordina tutte le timbrature cronologicamente
-        const tutteTimbrature = timbratureLavorative.sort((a, b) => {
-          // Converte ore in minuti per confronto corretto
-          const minutiA = timeToMinutes(a.ore);
-          const minutiB = timeToMinutes(b.ore);
-          return minutiA - minutiB;
+        // Ordina le timbrature per ora REALE (non per tipo)
+        const timbratureOrdinate = timbratureOggi.sort((a, b) => {
+          // Converte l'ora in timestamp per confronto corretto
+          const dataA = new Date(a.data + 'T' + a.ore);
+          const dataB = new Date(b.data + 'T' + b.ore);
+          return dataA - dataB;
         });
 
-        // Funzione per convertire ore in minuti
-        function timeToMinutes(timeStr) {
-          const [h, m] = timeStr.split(':').map(Number);
-          return h * 60 + m;
-        }
-
-        // Crea coppie entrata-uscita seguendo l'ordine cronologico
+        // Crea coppie entrata-uscita in ordine cronologico REALE
         const coppie = [];
         let entrataCorrente = null;
         
-        for (const timbratura of tutteTimbrature) {
+        for (const timbratura of timbratureOrdinate) {
           if (timbratura.tipo === 'entrata') {
             // Se c'è già un'entrata senza uscita, chiudi la coppia precedente
             if (entrataCorrente) {
@@ -843,8 +823,8 @@
 
         let oreTotaliGiorno = 0;
 
-        // Se non ci sono timbrature, mostra una riga vuota
-        if (timbratureLavorative.length === 0) {
+        // Se non ci sono timbrature per questo giorno logico, mostra una riga vuota
+        if (timbratureOggi.length === 0) {
           const riga = document.createElement("tr");
           if (current.getDay() === 0 || current.getDay() === 6) {
             riga.classList.add('weekend');

@@ -883,15 +883,15 @@
             <td style="${isTimbrataExtra ? 'color: #fef08a;' : ''}">${oraUscitaDisplay}</td>
             <td style="color: #ffff99; ${isTimbrataExtra ? 'font-weight: normal;' : ''}">${oreLavorate}</td>
             <td>
-              ${isPrimaTimbrata ? `
-                <img
-                  src="assets/icons/matita-colorata.png"
-                  class="modifica-icon"
-                  data-data="${dataISO}"
-                  title="Modifica"
-                  alt="Modifica"
-                />
-              ` : ''}
+              <img
+                src="assets/icons/matita-colorata.png"
+                class="modifica-icon"
+                data-data="${dataISO}"
+                data-indice="${i}"
+                title="Modifica ${isTimbrataExtra ? 'Timbratura Extra' : 'Timbratura'}"
+                alt="Modifica"
+                style="${isTimbrataExtra ? 'opacity: 0.8;' : ''}"
+              />
             </td>
           `;
           tbody.appendChild(riga);
@@ -917,7 +917,8 @@
       document.querySelectorAll(".modifica-icon").forEach(icon => {
         icon.addEventListener("click", () => {
           const dataSelezionata = icon.dataset.data;
-          apriModale(dataSelezionata);
+          const indiceTimbratura = parseInt(icon.dataset.indice) || 0;
+          apriModale(dataSelezionata, indiceTimbratura);
         });
       });
     }
@@ -929,6 +930,7 @@
     const btnElimina = document.getElementById("btnElimina");
     const btnChiudi = document.getElementById("btnChiudi");
     let dataCorrenteModale = null;
+    let indiceCorrenteModale = 0;
     let timbraturaEntrataCorrente = null;
     let timbraturaUscitaCorrente = null;
 
@@ -938,17 +940,35 @@
       const [anno, mese, giorno] = dataISO.split('-');
       return `${giorno}/${mese}/${anno}`;
     }
-    async function apriModale(dataSelezionata) {
+    async function apriModale(dataSelezionata, indiceTimbratura = 0) {
       dataCorrenteModale = dataSelezionata;
+      indiceCorrenteModale = indiceTimbratura;
       modaleDataInput.value = dataSelezionata;
+      
       const timbratureOggi = timbrature.filter(t => {
         let dataTimbratura = t.data;
         if (typeof dataTimbratura !== "string") {
           dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
         }
         return dataTimbratura === dataSelezionata;
-      });      timbraturaEntrataCorrente = timbratureOggi.find(t => t.tipo === "entrata") || null;
-      timbraturaUscitaCorrente = timbratureOggi.find(t => t.tipo === "uscita") || null;
+      });
+
+      // Ordina le timbrature per ora
+      timbratureOggi.sort((a, b) => {
+        if (a.ore && b.ore) {
+          return a.ore.localeCompare(b.ore);
+        }
+        return 0;
+      });
+
+      // Raggruppa entrate e uscite
+      const entrate = timbratureOggi.filter(t => t.tipo === "entrata");
+      const uscite = timbratureOggi.filter(t => t.tipo === "uscita");
+
+      // Seleziona la coppia specifica in base all'indice
+      timbraturaEntrataCorrente = entrate[indiceTimbratura] || null;
+      timbraturaUscitaCorrente = uscite[indiceTimbratura] || null;
+
       const oraEntrata = timbraturaEntrataCorrente && timbraturaEntrataCorrente.ore ? 
         timbraturaEntrataCorrente.ore.slice(0,5) : "";
       const oraUscita = timbraturaUscitaCorrente && timbraturaUscitaCorrente.ore ? 
@@ -956,6 +976,15 @@
 
       modaleEntrataInput.value = oraEntrata;
       modaleUscitaInput.value = oraUscita;
+
+      // Aggiorna il titolo della modale per indicare quale timbratura si sta modificando
+      const titoloModale = document.querySelector('#modal h2');
+      if (indiceTimbratura === 0) {
+        titoloModale.textContent = 'Modifica Timbrature';
+      } else {
+        titoloModale.textContent = `Modifica Timbrature Extra #${indiceTimbratura + 1}`;
+      }
+
       modalOverlay.style.display = "flex";
     }
     function chiudiModale() {
@@ -1048,23 +1077,53 @@
       chiudiModale();
     }
     async function eliminaTimbratureGiorno() {
-      if (!confirm("CONFERMI MODIFICHE?")) return;
-      const daEliminare = timbrature.filter(t => {
-        let dataTimbratura = t.data;
-        if (typeof dataTimbratura !== "string") {
-          dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
+      // Determina il messaggio di conferma in base al tipo di timbratura
+      const messaggioConferma = indiceCorrenteModale === 0 ? 
+        "Vuoi eliminare TUTTE le timbrature del giorno o solo questa coppia?\n\nOK = SOLO questa coppia\nANNULLA = TUTTE le timbrature" :
+        "CONFERMI ELIMINAZIONE di questa timbratura extra?";
+      
+      const eliminaSoloQuesta = confirm(messaggioConferma);
+      
+      if (indiceCorrenteModale === 0 && !eliminaSoloQuesta) {
+        // Elimina tutte le timbrature del giorno
+        if (!confirm("CONFERMI ELIMINAZIONE di TUTTE le timbrature del giorno?")) return;
+        
+        const daEliminare = timbrature.filter(t => {
+          let dataTimbratura = t.data;
+          if (typeof dataTimbratura !== "string") {
+            dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
+          }
+          return dataTimbratura === dataCorrenteModale;
+        });
+        
+        for (const t of daEliminare) {
+          if (t.id) {
+            const { error } = await supabase
+              .from("timbrature")
+              .delete()
+              .eq("id", t.id);
+            if (error) alert("Errore eliminazione: " + error.message);
+          }
         }
-        return dataTimbratura === dataCorrenteModale;
-      });
-      for (const t of daEliminare) {
-        if (t.id) {
+      } else {
+        // Elimina solo la coppia specifica
+        if (timbraturaEntrataCorrente && timbraturaEntrataCorrente.id) {
           const { error } = await supabase
             .from("timbrature")
             .delete()
-            .eq("id", t.id);
-          if (error) alert("Errore eliminazione: " + error.message);
+            .eq("id", timbraturaEntrataCorrente.id);
+          if (error) alert("Errore eliminazione entrata: " + error.message);
+        }
+        
+        if (timbraturaUscitaCorrente && timbraturaUscitaCorrente.id) {
+          const { error } = await supabase
+            .from("timbrature")
+            .delete()
+            .eq("id", timbraturaUscitaCorrente.id);
+          if (error) alert("Errore eliminazione uscita: " + error.message);
         }
       }
+      
       await caricaDati();
       chiudiModale();
     }

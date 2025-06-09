@@ -792,12 +792,12 @@
           `${giornoNumero}  ${giornoSettimana}`;
 
         const timbratureOggi = timbrature.filter(t => {
-          if (!t.data) return false;
-          let dataTimbratura = t.data;
-          if (typeof dataTimbratura !== "string") {
-            dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
+          if (!t.giornologico) return false;
+          let giornoLogico = t.giornologico;
+          if (typeof giornoLogico !== "string") {
+            giornoLogico = new Date(giornoLogico).toISOString().split("T")[0];
           }
-          return dataTimbratura === dataISO;
+          return giornoLogico === dataISO;
         });
 
         // Ordina le timbrature per ora
@@ -972,11 +972,11 @@
       modaleDataInput.value = dataSelezionata;
 
       const timbratureOggi = timbrature.filter(t => {
-        let dataTimbratura = t.data;
-        if (typeof dataTimbratura !== "string") {
-          dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
+        let giornoLogico = t.giornologico;
+        if (typeof giornoLogico !== "string") {
+          giornoLogico = new Date(giornoLogico).toISOString().split("T")[0];
         }
-        return dataTimbratura === dataSelezionata;
+        return giornoLogico === dataSelezionata;
       });
 
       // Ordina le timbrature per ora

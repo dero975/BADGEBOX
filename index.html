@@ -349,12 +349,12 @@
     </script>
 </head>
 <body>
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 5px; padding: 10px;">
-      <img src="assets/icons/logo.png" alt="BadgeBox Logo" style="width: 150px; height: auto; margin-bottom: 6.25px;" />
-      <div class="container" style="margin: 0;">
-      <div class="data-time">
-        <div class="data-giorno" id="dataGiorno"></div>
-        <div class="ora" id="ora"></div>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 2px; padding: 5px;">
+      <img src="assets/icons/logo.png" alt="BadgeBox Logo" style="width: 80px; height: auto; margin-bottom: 2px;" />
+      <div class="container" style="margin: 0; padding: 15px; max-width: 320px;">
+      <div class="data-time" style="margin-bottom: 15px;">
+        <div class="data-giorno" id="dataGiorno" style="font-size: 16px; margin-bottom: 2px;"></div>
+        <div class="ora" id="ora" style="font-size: 20px;"></div>
       </div>
       <input
         type="text"
@@ -362,25 +362,26 @@
         placeholder="PIN"
         readonly
         maxlength="2"
+        style="width: 180px; padding: 10px; font-size: 24px; margin-bottom: 15px;"
       />
       <div id="status"></div>
-      <div class="keypad">
-        <button class="key">1</button>
-        <button class="key">2</button>
-        <button class="key">3</button>
-        <button class="key">4</button>
-        <button class="key">5</button>
-        <button class="key">6</button>
-        <button class="key">7</button>
-        <button class="key">8</button>
-        <button class="key">9</button>
-        <button class="key">C</button>
-        <button class="key">0</button>
-        <button class="key" style="color: #ffff99;">⚙️</button>
+      <div class="keypad" style="grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; max-width: 200px;">
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">1</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">2</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">3</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">4</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">5</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">6</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">7</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">8</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">9</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">C</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">0</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 16px; color: #ffff99;">⚙️</button>
       </div>
-      <div class="actions">
-        <button class="action-btn entrata">Entrata</button>
-        <button class="action-btn uscita">Uscita</button>
+      <div class="actions" style="gap: 10px; margin-top: 10px;">
+        <button class="action-btn entrata" style="padding: 12px 16px; font-size: 16px;">Entrata</button>
+        <button class="action-btn uscita" style="padding: 12px 16px; font-size: 16px;">Uscita</button>
       </div>
     </div>
 

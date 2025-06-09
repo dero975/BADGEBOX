@@ -117,6 +117,7 @@
       margin-bottom: 10px;
       padding: 13px;
       overflow: hidden;
+      overflow-x: auto;
     }
     .tabella-container {
       background-color: transparent;
@@ -319,16 +320,34 @@
     /* Media query per tablet e schermi medi */
     @media (max-width: 1024px) and (min-width: 768px) {
       .filtro-temporale {
-        gap: 15px;
+        gap: 12px;
         flex-wrap: wrap;
         justify-content: center;
-        padding: 0 20px;
+        padding: 0 15px;
+        max-width: 100%;
       }
       
-      .filtro-temporale select,
+      .filtro-temporale select {
+        flex: 1 1 100%;
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+        order: 1;
+      }
+      
       .data-container {
-        flex: 0 0 180px;
-        width: 180px;
+        flex: 1 1 calc(50% - 6px);
+        width: calc(50% - 6px);
+        min-width: 140px;
+        max-width: 200px;
+      }
+      
+      .data-container:first-of-type {
+        order: 2;
+      }
+      
+      .data-container:last-of-type {
+        order: 3;
       }
       
       .filtro-temporale input[type="date"] {
@@ -340,21 +359,83 @@
     @media (max-width: 767px) {
       .filtro-temporale {
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
         align-items: stretch;
-        padding: 0 15px;
+        padding: 0 10px;
+        max-width: 100%;
       }
       
       .filtro-temporale select,
       .data-container {
-        flex: 1;
+        flex: none;
         width: 100%;
-        max-width: 280px;
-        margin: 0 auto;
+        max-width: 100%;
+        margin: 0;
       }
       
       .filtro-temporale input[type="date"] {
         width: 100%;
+      }
+      
+      .container {
+        padding: 15px;
+      }
+      
+      .titolo-grande {
+        font-size: 32px;
+      }
+      
+      .titolo-piccolo {
+        font-size: 16px;
+      }
+    }
+
+    /* Media query per schermi molto piccoli */
+    @media (max-width: 480px) {
+      .filtro-temporale {
+        gap: 10px;
+        padding: 0 5px;
+      }
+      
+      .filtro-temporale select,
+      .filtro-temporale input[type="date"] {
+        font-size: 14px;
+        padding: 10px 12px;
+        height: 44px;
+      }
+      
+      .container {
+        padding: 10px;
+      }
+      
+      table th, table td {
+        padding: 8px 6px;
+        font-size: 13px;
+      }
+      
+      .pulsanti-basso {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      
+      .pulsanti-basso button {
+        flex: 1;
+        min-width: 70px;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      
+      .modifica-icon {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    /* Media query per tablet - layout pulsanti */
+    @media (max-width: 1024px) and (min-width: 768px) {
+      .pulsanti-basso {
+        gap: 10px;
+        padding: 0 15px;
       }
     }
   </style>
@@ -495,6 +576,8 @@
       if (selectFiltro.value !== "personalizzato") {
         // Nasconde l'opzione personalizzato quando si seleziona un periodo predefinito
         opzionePersonalizzato.style.display = 'none';
+        // Forza l'aggiornamento della selezione visuale
+        selectFiltro.blur();
         aggiornaRange(selectFiltro.value);
       }
       caricaDati();

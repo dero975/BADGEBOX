@@ -775,36 +775,14 @@
           `${giornoNumero} ${giornoSettimana.slice(0,3)}` : 
           `${giornoNumero}  ${giornoSettimana}`;
 
-        // Filtra timbrature per il giorno corrente E il giorno precedente (per catturare le uscite notturne)
+        // NUOVA LOGICA: Usa giornologico per raggruppare le timbrature
         const timbratureOggi = timbrature.filter(t => {
-          if (!t.data) return false;
-          let dataTimbratura = t.data;
-          if (typeof dataTimbratura !== "string") {
-            dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
+          if (!t.giornologico) return false;
+          let giornoLogico = t.giornologico;
+          if (typeof giornoLogico !== "string") {
+            giornoLogico = new Date(giornoLogico).toISOString().split("T")[0];
           }
-
-          // Prendi timbrature del giorno corrente
-          if (dataTimbratura === dataISO) return true;
-
-          // Prendi anche timbrature del giorno successivo se sono nella fascia 00:00-04:59
-          const giornoSuccessivo = new Date(current);
-          giornoSuccessivo.setDate(giornoSuccessivo.getDate() + 1);
-          const dataSuccessivaISO = giornoSuccessivo.toISOString().split("T")[0];
-
-          if (dataTimbratura === dataSuccessivaISO && t.ore) {
-            const [h] = t.ore.split(":").map(Number);
-            return h >= 0 && h <= 4; // Solo timbrature 00:00-04:59 del giorno dopo
-          }
-
-          return false;
-        });
-
-        // Ordina le timbrature per ora
-        timbratureOggi.sort((a, b) => {
-          if (a.ore && b.ore) {
-            return a.ore.localeCompare(b.ore);
-          }
-          return 0;
+          return giornoLogico === dataISO;
         });
 
         // Funzione per determinare se un orario è nella fascia lavorativa (08:00-04:59)
@@ -813,12 +791,27 @@
           const [h, m] = ore.split(":").map(Number);
           const minuti = h * 60 + m;
 
-          // Fascia lavorativa: 08:00-23:59 (stesso giorno) + 00:00-04:59 (giorno dopo)
+          // Fascia lavorativa: 08:00-23:59 + 00:00-04:59
+          // Esclusa fascia 05:00-07:59
           return (minuti >= 480 && minuti <= 1439) || (minuti >= 0 && minuti <= 299);
         }
 
-        // Filtra solo le timbrature nella fascia lavorativa
+        // Filtra solo le timbrature nella fascia lavorativa ed escludi 05:00-07:59
         const timbratureLavorative = timbratureOggi.filter(t => isOrarioLavorativo(t.ore));
+
+        // Ordina le timbrature per ora (gestendo il cambio di giorno)
+        timbratureLavorative.sort((a, b) => {
+          if (!a.ore || !b.ore) return 0;
+          
+          const [hA] = a.ore.split(":").map(Number);
+          const [hB] = b.ore.split(":").map(Number);
+          
+          // Converti ore notturne (00:00-04:59) in ore del giorno dopo per ordinamento
+          const oraAdjustedA = hA >= 0 && hA <= 4 ? hA + 24 : hA;
+          const oraAdjustedB = hB >= 0 && hB <= 4 ? hB + 24 : hB;
+          
+          return a.ore.localeCompare(b.ore);
+        });
 
         // Separa entrate e uscite
         const entrate = timbratureLavorative.filter(t => t.tipo === "entrata");
@@ -843,10 +836,11 @@
         let oreTotaliGiorno = 0;
         if (primaEntrata && primaUscita && primaEntrata.ore && primaUscita.ore) {
           const entrata = new Date(`1970-01-01T${primaEntrata.ore}`);
-          const uscita = new Date(`1970-01-01T${primaUscita.ore}`);
+          let uscita = new Date(`1970-01-01T${primaUscita.ore}`);
           
-          // Se l'uscita è prima dell'entrata, significa che è il giorno dopo
-          if (uscita < entrata) {
+          // Se l'uscita è nella fascia notturna (00:00-04:59), è del giorno dopo
+          const [hUscita] = primaUscita.ore.split(":").map(Number);
+          if (hUscita >= 0 && hUscita <= 4) {
             uscita.setDate(uscita.getDate() + 1);
           }
           
@@ -894,10 +888,11 @@
           let oreLavorateSuccessive = "—";
           if (entrataSuccessiva && uscitaSuccessiva && entrataSuccessiva.ore && uscitaSuccessiva.ore) {
             const entrata = new Date(`1970-01-01T${entrataSuccessiva.ore}`);
-            const uscita = new Date(`1970-01-01T${uscitaSuccessiva.ore}`);
+            let uscita = new Date(`1970-01-01T${uscitaSuccessiva.ore}`);
             
-            // Se l'uscita è prima dell'entrata, significa che è il giorno dopo
-            if (uscita < entrata) {
+            // Se l'uscita è nella fascia notturna (00:00-04:59), è del giorno dopo
+            const [hUscita] = uscitaSuccessiva.ore.split(":").map(Number);
+            if (hUscita >= 0 && hUscita <= 4) {
               uscita.setDate(uscita.getDate() + 1);
             }
             

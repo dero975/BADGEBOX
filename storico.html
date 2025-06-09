@@ -780,6 +780,23 @@
 
       console.log(`Rendering tabella dal ${start.toISOString().split('T')[0]} al ${end.toISOString().split('T')[0]}`);
 
+      // Funzione per determinare il giorno lavorativo
+      function getGiornoLavorativo(dataTimbratura, oraTimbratura) {
+        if (!oraTimbratura) return dataTimbratura;
+        
+        const [ore] = oraTimbratura.split(':').map(Number);
+        const dataObj = new Date(dataTimbratura + 'T00:00:00');
+        
+        // Se l'ora è tra 00:00 e 04:59, appartiene al giorno lavorativo precedente
+        if (ore >= 0 && ore <= 4) {
+          dataObj.setDate(dataObj.getDate() - 1);
+          return dataObj.toISOString().split('T')[0];
+        }
+        
+        // Se l'ora è tra 05:00 e 23:59, appartiene al giorno stesso
+        return dataTimbratura;
+      }
+
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const current = new Date(d);
         const dataISO = current.toISOString().split("T")[0];
@@ -791,13 +808,17 @@
           `${giornoNumero} ${giornoSettimana.slice(0,3)}` : 
           `${giornoNumero}  ${giornoSettimana}`;
 
+        // Filtra le timbrature per giorno lavorativo
         const timbratureOggi = timbrature.filter(t => {
-          if (!t.data) return false;
+          if (!t.data || !t.ore) return false;
+          
           let dataTimbratura = t.data;
           if (typeof dataTimbratura !== "string") {
             dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
           }
-          return dataTimbratura === dataISO;
+          
+          const giornoLavorativo = getGiornoLavorativo(dataTimbratura, t.ore);
+          return giornoLavorativo === dataISO;
         });
 
         // Ordina le timbrature per ora
@@ -874,18 +895,16 @@
             const inizio = new Date(`1970-01-01T${entrata.ore}`);
             const fine = new Date(`1970-01-01T${uscita.ore}`);
 
-            // Per timbrature extra (i > 0), controlla se l'uscita è nel giorno successivo
-            if (i > 0) {
-              const [hEntrata] = entrata.ore.split(":").map(Number);
-              const [hUscita] = uscita.ore.split(":").map(Number);
+            const [hEntrata] = entrata.ore.split(":").map(Number);
+            const [hUscita] = uscita.ore.split(":").map(Number);
 
-              // Se uscita è nelle prime ore del mattino (< 6) e entrata è nel pomeriggio/sera (> 12)
-              // oppure se uscita è semplicemente minore di entrata, aggiungi un giorno
-              if ((hUscita < 6 && hEntrata > 12) || fine <= inizio) {
-                fine.setDate(fine.getDate() + 1);
-              }
-            } else if (fine < inizio) {
-              // Per la prima timbratura, logica standard
+            // Logica per turni che attraversano la mezzanotte (08:00-04:00)
+            // Se l'uscita è tra le 00:00 e le 04:59, è del giorno successivo
+            if (hUscita >= 0 && hUscita <= 4) {
+              fine.setDate(fine.getDate() + 1);
+            }
+            // Se entrata è dopo uscita nello stesso giorno (es: 22:00 entrata, 23:00 uscita del giorno prima)
+            else if (fine < inizio) {
               fine.setDate(fine.getDate() + 1);
             }
 

@@ -1,2 +1,759 @@
-The code has been modified to correctly group timestamps by considering those occurring until 05:00 of the next day as part of the previous day's shift.
-```
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storico Timbrature</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    body {
+      background-color: #0d1b2b;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background-color: #1e293b;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn:hover {
+      background-color: #334155;
+    }
+    .btn-primary {
+      background-color: #3b82f6;
+    }
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+    .btn-success {
+      background-color: #10b981;
+    }
+    .btn-success:hover {
+      background-color: #059669;
+    }
+    .btn-danger {
+      background-color: #ef4444;
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .month-nav button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    .month-nav button:hover {
+      background-color: #334155;
+    }
+    .table-container {
+      overflow-x: auto;
+      background-color: #1e293b;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #374151;
+    }
+    th {
+      background-color: #374151;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    tr:hover {
+      background-color: #2d3748;
+    }
+    .giorno-colonna {
+      text-align: left;
+      font-weight: bold;
+      min-width: 120px;
+    }
+    .ore-colonna {
+      min-width: 80px;
+      font-family: monospace;
+    }
+    .azioni-colonna {
+      min-width: 60px;
+    }
+    .timbratura-btn {
+      background: none;
+      border: none;
+      color: #60a5fa;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+    .timbratura-btn:hover {
+      background-color: #374151;
+      color: #93c5fd;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: #1e293b;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      color: white;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .close {
+      color: #aaa;
+      font-size: 28px;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: white;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #374151;
+      border-radius: 5px;
+      background-color: #374151;
+      color: white;
+      font-size: 16px;
+    }
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    .weekend {
+      background-color: #2563eb !important;
+      color: white;
+    }
+    .festivo {
+      background-color: #dc2626 !important;
+      color: white;
+    }
+    .oggi {
+      background-color: #059669 !important;
+      color: white;
+    }
+    .totali {
+      background-color: #374151;
+      font-weight: bold;
+      border-top: 2px solid #60a5fa;
+    }
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .nav-controls {
+        justify-content: center;
+      }
+      .month-nav {
+        justify-content: center;
+      }
+      body {
+        padding: 10px;
+      }
+      th, td {
+        padding: 8px 4px;
+        font-size: 12px;
+      }
+      .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="nav-controls">
+      <button class="btn" onclick="location.href='utenti.html'">
+        <span>👥 Gestione Utenti</span>
+      </button>
+      <button class="btn" onclick="location.href='index.html'">
+        <span>🏠 Home</span>
+      </button>
+    </div>
+    
+    <div class="month-nav">
+      <button onclick="cambiaMessaggio(-1)">‹</button>
+      <span id="mese-corrente"></span>
+      <button onclick="cambiaMessaggio(1)">›</button>
+    </div>
+    
+    <div class="nav-controls">
+      <button class="btn btn-success" onclick="esportaPDF()">
+        <span>📄 Esporta PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table id="tabella-storico">
+      <thead>
+        <tr>
+          <th class="giorno-colonna">Giorno</th>
+          <th class="ore-colonna">1ª Entrata</th>
+          <th class="ore-colonna">1ª Uscita</th>
+          <th class="ore-colonna">2ª Uscita</th>
+          <th class="ore-colonna">Ore Lavorate</th>
+          <th class="azioni-colonna">Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-storico">
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal per modifica timbratura -->
+  <div id="modal-timbratura" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Modifica Timbratura</h3>
+        <span class="close" onclick="chiudiModal()">&times;</span>
+      </div>
+      
+      <form id="form-timbratura">
+        <div class="form-group">
+          <label for="modal-tipo">Tipo:</label>
+          <select id="modal-tipo" required>
+            <option value="entrata">Entrata</option>
+            <option value="uscita">Uscita</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="modal-ora">Ora (HH:MM):</label>
+          <input type="time" id="modal-ora" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="modal-giorno">Giorno logico:</label>
+          <input type="date" id="modal-giorno" required>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" class="btn" onclick="chiudiModal()">Annulla</button>
+          <button type="button" class="btn btn-danger" onclick="eliminaTimbratura()" id="btn-elimina">Elimina</button>
+          <button type="submit" class="btn btn-primary">Salva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://pylfpqitdogatlsndxtf.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5bGZwcWl0ZG9nYXRsc25keHRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzU5OTcsImV4cCI6MjA2Mzk1MTk5N30.GXWmglDP7WcLSozta8UT6Ktd9XzIXSCxC5pJ4oWX3LU"
+    );
+
+    let meseCorrente = new Date();
+    let pinUtente = null;
+    let timbratureData = [];
+    let timbraturaCorrente = null;
+
+    // Ottieni PIN dalla URL
+    function ottieniPinDaURL() {
+      console.log("URL completa:", window.location.href);
+      console.log("Query string:", window.location.search);
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const pin = urlParams.get('pin');
+      console.log("PIN dalla URL:", pin);
+      return pin;
+    }
+
+    // Formatta data per display
+    function formattaData(data) {
+      const giorni = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+      const mesi = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                   'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+      
+      const d = new Date(data + 'T00:00:00');
+      const giornoSettimana = giorni[d.getDay()];
+      const numeroGiorno = d.getDate().toString().padStart(2, '0');
+      
+      return `${numeroGiorno} ${giornoSettimana}`;
+    }
+
+    // Verifica se è weekend
+    function isWeekend(data) {
+      const d = new Date(data + 'T00:00:00');
+      const dayOfWeek = d.getDay();
+      return dayOfWeek === 0 || dayOfWeek === 6; // Domenica (0) o Sabato (6)
+    }
+
+    // Verifica se è oggi
+    function isOggi(data) {
+      const oggi = new Date();
+      const dataCheck = new Date(data + 'T00:00:00');
+      return oggi.toDateString() === dataCheck.toDateString();
+    }
+
+    // Carica timbrature dal database
+    async function caricaTimbrature() {
+      if (!pinUtente) return;
+
+      const primoGiorno = new Date(meseCorrente.getFullYear(), meseCorrente.getMonth(), 1);
+      const ultimoGiorno = new Date(meseCorrente.getFullYear(), meseCorrente.getMonth() + 1, 0);
+      
+      const dataInizio = primoGiorno.toISOString().split('T')[0];
+      const dataFine = ultimoGiorno.toISOString().split('T')[0];
+
+      console.log("Range aggiornato: dal", dataInizio, "al", dataFine);
+      console.log("Ultimo giorno del mese:", ultimoGiorno.getDate());
+
+      try {
+        console.log("Eseguendo query timbrature per PIN:", pinUtente, "Range:", dataInizio, "-", dataFine);
+        
+        const { data, error } = await supabase
+          .from('timbrature')
+          .select('*')
+          .eq('pin', pinUtente)
+          .gte('data', dataInizio)
+          .lte('data', dataFine)
+          .order('data', { ascending: true })
+          .order('ore', { ascending: true });
+
+        if (error) {
+          console.error("Errore query timbrature:", error);
+          throw error;
+        }
+
+        console.log("Dati timbrature ricevuti:", data);
+        console.log("Struttura primo record:", data.length > 0 ? Object.keys(data[0]) : "Nessun record");
+        
+        timbratureData = data || [];
+        renderTabella();
+      } catch (error) {
+        console.error('Errore nel caricamento timbrature:', error);
+        alert('Errore nel caricamento dei dati: ' + error.message);
+      }
+    }
+
+    // Raggruppa timbrature per giorno logico
+    function raggruppaTimbrature() {
+      const gruppi = {};
+      
+      timbratureData.forEach(timbratura => {
+        // Usa il campo giornologico per raggruppare
+        const giornoLogico = timbratura.giornologico;
+        
+        if (!gruppi[giornoLogico]) {
+          gruppi[giornoLogico] = {
+            entrate: [],
+            uscite: []
+          };
+        }
+        
+        if (timbratura.tipo === 'entrata') {
+          gruppi[giornoLogico].entrate.push(timbratura);
+        } else {
+          gruppi[giornoLogico].uscite.push(timbratura);
+        }
+      });
+      
+      // Ordina entrate e uscite per ora
+      Object.keys(gruppi).forEach(giorno => {
+        gruppi[giorno].entrate.sort((a, b) => a.ore.localeCompare(b.ore));
+        gruppi[giorno].uscite.sort((a, b) => a.ore.localeCompare(b.ore));
+      });
+      
+      return gruppi;
+    }
+
+    // Renderizza la tabella
+    function renderTabella() {
+      const tbody = document.getElementById('tbody-storico');
+      const primoGiorno = new Date(meseCorrente.getFullYear(), meseCorrente.getMonth(), 1);
+      const ultimoGiorno = new Date(meseCorrente.getFullYear(), meseCorrente.getMonth() + 1, 0);
+      
+      // Calcola range esteso per includere i giorni necessari
+      const primoGiornoEsteso = new Date(primoGiorno);
+      primoGiornoEsteso.setDate(primoGiornoEsteso.getDate() - 1);
+      const ultimoGiornoEsteso = new Date(ultimoGiorno);
+      ultimoGiornoEsteso.setDate(ultimoGiornoEsteso.getDate() + 1);
+      
+      console.log("Rendering tabella dal", primoGiornoEsteso.toISOString().split('T')[0], "al", ultimoGiornoEsteso.toISOString().split('T')[0]);
+      
+      const gruppiTimbrature = raggruppaTimbrature();
+      tbody.innerHTML = '';
+      
+      let totaleTotaleOre = 0;
+      let totaleTotaleMinuti = 0;
+
+      for (let d = new Date(primoGiornoEsteso); d <= ultimoGiornoEsteso; d.setDate(d.getDate() + 1)) {
+        const dataStringa = d.toISOString().split('T')[0];
+        const gruppo = gruppiTimbrature[dataStringa] || { entrate: [], uscite: [] };
+        
+        const riga = document.createElement('tr');
+        
+        // Applica classi CSS per weekend, festivi, oggi
+        if (isWeekend(dataStringa)) {
+          riga.classList.add('weekend');
+        }
+        if (isOggi(dataStringa)) {
+          riga.classList.add('oggi');
+        }
+
+        // Determina se questa è una timbratura "extra" (fuori dal mese corrente)
+        const isTimbrataExtra = d < primoGiorno || d > ultimoGiorno;
+        
+        // Colonna giorno
+        const colonnaGiorno = document.createElement('td');
+        colonnaGiorno.className = 'giorno-colonna';
+        colonnaGiorno.textContent = formattaData(dataStringa);
+        riga.appendChild(colonnaGiorno);
+
+        // Colonne timbrature
+        const primaEntrata = gruppo.entrate[0];
+        const primaUscita = gruppo.uscite[0];
+        const secondaEntrata = gruppo.entrate[1];
+        const secondaUscita = gruppo.uscite[1];
+
+        // 1ª Entrata
+        const colonnaPrimaEntrata = document.createElement('td');
+        colonnaPrimaEntrata.className = 'ore-colonna';
+        if (primaEntrata) {
+          const btnEntrata = document.createElement('button');
+          btnEntrata.className = 'timbratura-btn';
+          btnEntrata.textContent = primaEntrata.ore.substring(0, 5);
+          btnEntrata.onclick = () => apriModal(primaEntrata);
+          colonnaPrimaEntrata.appendChild(btnEntrata);
+        } else {
+          colonnaPrimaEntrata.textContent = '—';
+        }
+        riga.appendChild(colonnaPrimaEntrata);
+
+        // 1ª Uscita
+        const colonnaPrimaUscita = document.createElement('td');
+        colonnaPrimaUscita.className = 'ore-colonna';
+        if (primaUscita) {
+          const btnUscita = document.createElement('button');
+          btnUscita.className = 'timbratura-btn';
+          btnUscita.textContent = primaUscita.ore.substring(0, 5);
+          btnUscita.onclick = () => apriModal(primaUscita);
+          colonnaPrimaUscita.appendChild(btnUscita);
+        } else {
+          colonnaPrimaUscita.textContent = '—';
+        }
+        riga.appendChild(colonnaPrimaUscita);
+
+        // 2ª Uscita
+        const colonnaSecondaUscita = document.createElement('td');
+        colonnaSecondaUscita.className = 'ore-colonna';
+        if (secondaUscita) {
+          const btnSecondaUscita = document.createElement('button');
+          btnSecondaUscita.className = 'timbratura-btn';
+          btnSecondaUscita.textContent = secondaUscita.ore.substring(0, 5);
+          btnSecondaUscita.onclick = () => apriModal(secondaUscita);
+          colonnaSecondaUscita.appendChild(btnSecondaUscita);
+        } else {
+          colonnaSecondaUscita.textContent = '—';
+        }
+        riga.appendChild(colonnaSecondaUscita);
+
+        // Calcolo ore lavorate
+        let oreTotaliGiorno = 0;
+        let minutiTotaliGiorno = 0;
+        
+        if (primaEntrata && primaUscita) {
+          const { ore: ore1, minuti: min1 } = calcolaOreLavorate(primaEntrata.ore, primaUscita.ore);
+          oreTotaliGiorno += ore1;
+          minutiTotaliGiorno += min1;
+        }
+        
+        if (secondaEntrata && secondaUscita) {
+          const { ore: ore2, minuti: min2 } = = calcolaOreLavorate(secondaEntrata.ore, secondaUscita.ore);
+          oreTotaliGiorno += ore2;
+          minutiTotaliGiorno += min2;
+        }
+
+        // Normalizza i minuti
+        oreTotaliGiorno += Math.floor(minutiTotaliGiorno / 60);
+        minutiTotaliGiorno = minutiTotaliGiorno % 60;
+
+        const colonnaOreLavorate = document.createElement('td');
+        colonnaOreLavorate.className = 'ore-colonna';
+        if (oreTotaliGiorno > 0 || minutiTotaliGiorno > 0) {
+          colonnaOreLavorate.textContent = `${oreTotaliGiorno}:${minutiTotaliGiorno.toString().padStart(2, '0')}`;
+          if (!isTimbrataExtra) {
+            totaleTotaleOre += oreTotaliGiorno;
+            totaleTotaleMinuti += minutiTotaliGiorno;
+          }
+        } else {
+          colonnaOreLavorate.textContent = '—';
+        }
+        riga.appendChild(colonnaOreLavorate);
+
+        // Colonna azioni
+        const colonnaAzioni = document.createElement('td');
+        colonnaAzioni.className = 'azioni-colonna';
+        const btnAggiungi = document.createElement('button');
+        btnAggiungi.className = 'timbratura-btn';
+        btnAggiungi.textContent = '✏️';
+        btnAggiungi.title = 'Aggiungi timbratura';
+        btnAggiungi.onclick = () => aggiungiTimbratura(dataStringa);
+        colonnaAzioni.appendChild(btnAggiungi);
+        riga.appendChild(colonnaAzioni);
+
+        // Applica stile per timbrature extra
+        if (isTimbrataExtra) {
+          riga.style.backgroundColor = '#2a2416';
+          riga.style.color = '#fef08a';
+        }
+
+        tbody.appendChild(riga);
+      }
+
+      // Normalizza totali
+      totaleTotaleOre += Math.floor(totaleTotaleMinuti / 60);
+      totaleTotaleMinuti = totaleTotaleMinuti % 60;
+
+      // Riga totali
+      const rigaTotali = document.createElement('tr');
+      rigaTotali.className = 'totali';
+      rigaTotali.innerHTML = `
+        <td class="giorno-colonna"><strong>TOTALE MESE</strong></td>
+        <td class="ore-colonna">—</td>
+        <td class="ore-colonna">—</td>
+        <td class="ore-colonna">—</td>
+        <td class="ore-colonna"><strong>${totaleTotaleOre}:${totaleTotaleMinuti.toString().padStart(2, '0')}</strong></td>
+        <td class="azioni-colonna">—</td>
+      `;
+      tbody.appendChild(rigaTotali);
+    }
+
+    // Calcola ore lavorate tra due orari
+    function calcolaOreLavorate(oraInizio, oraFine) {
+      const [oreI, minI] = oraInizio.split(':').map(Number);
+      const [oreF, minF] = oraFine.split(':').map(Number);
+      
+      let minutiInizio = oreI * 60 + minI;
+      let minutiFine = oreF * 60 + minF;
+      
+      // Se l'orario di fine è minore dell'inizio, significa che attraversa la mezzanotte
+      if (minutiFine < minutiInizio) {
+        minutiFine += 24 * 60; // Aggiungi 24 ore in minuti
+      }
+      
+      const differenzaMinuti = minutiFine - minutiInizio;
+      const ore = Math.floor(differenzaMinuti / 60);
+      const minuti = differenzaMinuti % 60;
+      
+      return { ore, minuti };
+    }
+
+    // Aggiorna display mese
+    function aggiornaDisplayMese() {
+      const mesi = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                   'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+      
+      const meseNome = mesi[meseCorrente.getMonth()];
+      const anno = meseCorrente.getFullYear();
+      
+      document.getElementById('mese-corrente').textContent = `${meseNome} ${anno}`;
+    }
+
+    // Cambia mese
+    window.cambiaMessaggio = function(direzione) {
+      meseCorrente.setMonth(meseCorrente.getMonth() + direzione);
+      aggiornaDisplayMese();
+      caricaTimbrature();
+    };
+
+    // Apri modal per modifica
+    function apriModal(timbratura) {
+      timbraturaCorrente = timbratura;
+      
+      document.getElementById('modal-tipo').value = timbratura.tipo;
+      document.getElementById('modal-ora').value = timbratura.ore.substring(0, 5);
+      document.getElementById('modal-giorno').value = timbratura.giornologico;
+      
+      document.getElementById('modal-timbratura').style.display = 'block';
+    }
+
+    // Aggiungi nuova timbratura
+    function aggiungiTimbratura(data) {
+      timbraturaCorrente = null;
+      
+      document.getElementById('modal-tipo').value = 'entrata';
+      document.getElementById('modal-ora').value = '';
+      document.getElementById('modal-giorno').value = data;
+      
+      document.getElementById('btn-elimina').style.display = 'none';
+      document.getElementById('modal-timbratura').style.display = 'block';
+    }
+
+    // Chiudi modal
+    window.chiudiModal = function() {
+      document.getElementById('modal-timbratura').style.display = 'none';
+      timbraturaCorrente = null;
+      document.getElementById('btn-elimina').style.display = 'inline-block';
+    };
+
+    // Gestisci submit form
+    document.getElementById('form-timbratura').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const tipo = document.getElementById('modal-tipo').value;
+      const ora = document.getElementById('modal-ora').value + ':00';
+      const giornologico = document.getElementById('modal-giorno').value;
+      
+      try {
+        if (timbraturaCorrente) {
+          // Modifica esistente
+          console.log("Modificando timbratura:", timbraturaCorrente.id, "con giornologico:", giornologico);
+          
+          const { error } = await supabase
+            .from('timbrature')
+            .update({
+              tipo: tipo,
+              ore: ora,
+              giornologico: giornologico,
+              data: new Date().toISOString().split('T')[0] // Data di modifica
+            })
+            .eq('id', timbraturaCorrente.id);
+
+          if (error) throw error;
+        } else {
+          // Nuova timbratura
+          console.log("Creando nuova timbratura con giornologico:", giornologico);
+          
+          const { error } = await supabase
+            .from('timbrature')
+            .insert({
+              pin: pinUtente,
+              nome: 'NOME_UTENTE', // Questo dovrebbe essere recuperato dall'utente
+              cognome: 'COGNOME_UTENTE',
+              data: new Date().toISOString().split('T')[0],
+              ore: ora,
+              tipo: tipo,
+              giornologico: giornologico
+            });
+
+          if (error) throw error;
+        }
+        
+        chiudiModal();
+        caricaTimbrature();
+      } catch (error) {
+        console.error('Errore nel salvataggio:', error);
+        alert('Errore nel salvataggio: ' + error.message);
+      }
+    });
+
+    // Elimina timbratura
+    window.eliminaTimbratura = async function() {
+      if (!timbraturaCorrente) return;
+      
+      if (!confirm('Sei sicuro di voler eliminare questa timbratura?')) return;
+      
+      try {
+        const { error } = await supabase
+          .from('timbrature')
+          .delete()
+          .eq('id', timbraturaCorrente.id);
+
+        if (error) throw error;
+        
+        chiudiModal();
+        caricaTimbrature();
+      } catch (error) {
+        console.error('Errore nell\'eliminazione:', error);
+        alert('Errore nell\'eliminazione: ' + error.message);
+      }
+    };
+
+    // Esporta PDF (placeholder)
+    window.esportaPDF = function() {
+      alert('Funzione esportazione PDF in sviluppo');
+    };
+
+    // Inizializzazione
+    pinUtente = ottieniPinDaURL();
+    if (!pinUtente) {
+      alert('PIN non specificato nell\'URL');
+      window.location.href = 'utenti.html';
+    } else {
+      aggiornaDisplayMese();
+      caricaTimbrature();
+    }
+
+    // Chiudi modal cliccando fuori
+    window.onclick = function(event) {
+      const modal = document.getElementById('modal-timbratura');
+      if (event.target === modal) {
+        chiudiModal();
+      }
+    };
+  </script>
+</body>
+</html>

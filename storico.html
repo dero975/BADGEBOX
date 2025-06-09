@@ -799,11 +799,14 @@
         // Filtra solo le timbrature nella fascia lavorativa
         const timbratureLavorative = timbratureOggi.filter(t => isOrarioLavorativo(t.ore));
 
-        // Ordina tutte le timbrature per ora
-        timbratureLavorative.sort((a, b) => a.ore.localeCompare(b.ore));
+        // Raggruppa entrate e uscite
+        const entrate = timbratureLavorative.filter(t => t.tipo === 'entrata').sort((a, b) => a.ore.localeCompare(b.ore));
+        const uscite = timbratureLavorative.filter(t => t.tipo === 'uscita').sort((a, b) => a.ore.localeCompare(b.ore));
 
         let oreTotaliGiorno = 0;
-        let primaRiga = true;
+
+        // Determina il numero massimo di coppie entrata/uscita
+        const maxCoppie = Math.max(entrate.length, uscite.length, 1);
 
         // Se non ci sono timbrature, mostra una riga vuota
         if (timbratureLavorative.length === 0) {
@@ -830,37 +833,58 @@
           `;
           tbody.appendChild(riga);
         } else {
-          // Mostra ogni singola timbratura
-          for (let i = 0; i < timbratureLavorative.length; i++) {
-            const timbratura = timbratureLavorative[i];
+          // Crea le righe per le coppie entrata/uscita
+          for (let i = 0; i < maxCoppie; i++) {
+            const entrata = entrate[i] || null;
+            const uscita = uscite[i] || null;
+            
             const riga = document.createElement("tr");
-
             if (current.getDay() === 0 || current.getDay() === 6) {
               riga.classList.add('weekend');
             }
 
-            const oraDisplay = timbratura.ore ? timbratura.ore.slice(0,5) : '—';
-            const tipoDisplay = timbratura.tipo === 'entrata' ? oraDisplay : '—';
-            const uscitaDisplay = timbratura.tipo === 'uscita' ? oraDisplay : '—';
+            const entrataDisplay = entrata ? entrata.ore.slice(0,5) : '—';
+            const uscitaDisplay = uscita ? uscita.ore.slice(0,5) : '—';
+
+            // Calcola ore lavorate solo se ci sono entrambe
+            let oreLavorateDisplay = '—';
+            if (entrata && uscita) {
+              const oraEntrata = entrata.ore;
+              const oraUscita = uscita.ore;
+              if (oraEntrata && oraUscita) {
+                const inizio = new Date(`1970-01-01T${oraEntrata}`);
+                const fine = new Date(`1970-01-01T${oraUscita}`);
+                if (fine < inizio) fine.setDate(fine.getDate() + 1);
+                const diffMs = fine - inizio;
+                if (diffMs > 0) {
+                  const h = Math.floor(diffMs / (1000 * 60 * 60));
+                  const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                  oreLavorateDisplay = `${h}:${m.toString().padStart(2, '0')}`;
+                  oreTotaliGiorno += h + m / 60;
+                }
+              }
+            }
+
+            // Determina quale ID usare per la modifica (priorità entrata)
+            const timbraturaIdModifica = entrata ? entrata.id : (uscita ? uscita.id : 'nuovo');
 
             riga.innerHTML = `
-              <td style="text-align: left;">${primaRiga ? dataFormattata : ''}</td>
-              <td>${tipoDisplay}</td>
+              <td style="text-align: left;">${i === 0 ? dataFormattata : ''}</td>
+              <td>${entrataDisplay}</td>
               <td>${uscitaDisplay}</td>
-              <td style="color: ${primaRiga ? '#ffff99' : '#ffffe0'};">${primaRiga ? '—' : '—'}</td>
+              <td style="color: ${i === 0 ? '#ffff99' : '#ffffe0'};">${i === 0 ? oreLavorateDisplay : '—'}</td>
               <td>
                 <img
                   src="assets/icons/matita-colorata.png"
                   class="modifica-icon"
                   data-data="${dataISO}"
-                  data-timbratura-id="${timbratura.id}"
+                  data-timbratura-id="${timbraturaIdModifica}"
                   title="Modifica"
                   alt="Modifica"
                 />
               </td>
             `;
             tbody.appendChild(riga);
-            primaRiga = false;
           }
         }
 

@@ -799,18 +799,46 @@
         // Filtra solo le timbrature nella fascia lavorativa
         const timbratureLavorative = timbratureOggi.filter(t => isOrarioLavorativo(t.ore));
 
-        // Raggruppa entrate e uscite e accoppiale cronologicamente
-        const entrate = timbratureLavorative.filter(t => t.tipo === 'entrata').sort((a, b) => a.ore.localeCompare(b.ore));
-        const uscite = timbratureLavorative.filter(t => t.tipo === 'uscita').sort((a, b) => a.ore.localeCompare(b.ore));
+        // Raggruppa e ordina tutte le timbrature cronologicamente
+        const tutteTimbrature = timbratureLavorative.sort((a, b) => {
+          // Converte ore in minuti per confronto corretto
+          const minutiA = timeToMinutes(a.ore);
+          const minutiB = timeToMinutes(b.ore);
+          return minutiA - minutiB;
+        });
 
-        // Crea coppie entrata-uscita basate sull'ordine cronologico
+        // Funzione per convertire ore in minuti
+        function timeToMinutes(timeStr) {
+          const [h, m] = timeStr.split(':').map(Number);
+          return h * 60 + m;
+        }
+
+        // Crea coppie entrata-uscita seguendo l'ordine cronologico
         const coppie = [];
-        const maxCoppie = Math.max(entrate.length, uscite.length);
+        let entrataCorrente = null;
         
-        for (let i = 0; i < maxCoppie; i++) {
-          const entrata = entrate[i] || null;
-          const uscita = uscite[i] || null;
-          coppie.push({ entrata, uscita });
+        for (const timbratura of tutteTimbrature) {
+          if (timbratura.tipo === 'entrata') {
+            // Se c'è già un'entrata senza uscita, chiudi la coppia precedente
+            if (entrataCorrente) {
+              coppie.push({ entrata: entrataCorrente, uscita: null });
+            }
+            entrataCorrente = timbratura;
+          } else if (timbratura.tipo === 'uscita') {
+            // Accoppia l'uscita con l'entrata corrente
+            if (entrataCorrente) {
+              coppie.push({ entrata: entrataCorrente, uscita: timbratura });
+              entrataCorrente = null;
+            } else {
+              // Uscita senza entrata precedente
+              coppie.push({ entrata: null, uscita: timbratura });
+            }
+          }
+        }
+        
+        // Se rimane un'entrata senza uscita, aggiungila
+        if (entrataCorrente) {
+          coppie.push({ entrata: entrataCorrente, uscita: null });
         }
 
         let oreTotaliGiorno = 0;

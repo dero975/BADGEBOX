@@ -606,39 +606,17 @@
       <form id="modaleForm">
         <label>Data:</label>
         <input type="date" id="modale-data" disabled />
-        
+
         <label for="modale-entrata">Entrata:</label>
         <input type="time" id="modale-entrata" />
-        <div id="entrata-giorno-container" style="margin-top: 5px; margin-bottom: 15px; display: none;">
-          <label style="font-size: 12px; color: #a0aec0; margin-bottom: 8px;">Giorno per entrata:</label>
-          <div style="display: flex; gap: 15px; margin-top: 5px;">
-            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0;">
-              <input type="radio" name="entrata-giorno" value="stesso" checked />
-              <span id="entrata-stesso-giorno">Stesso giorno</span>
-            </label>
-            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0;">
-              <input type="radio" name="entrata-giorno" value="successivo" />
-              <span id="entrata-giorno-successivo">Giorno successivo</span>
-            </label>
-          </div>
-        </div>
-        
+        <label for="modale-giorno-entrata">Giorno Entrata:</label>
+        <input type="date" id="modale-giorno-entrata" />
+
         <label for="modale-uscita">Uscita:</label>
         <input type="time" id="modale-uscita" />
-        <div id="uscita-giorno-container" style="margin-top: 5px; margin-bottom: 15px; display: none;">
-          <label style="font-size: 12px; color: #a0aec0; margin-bottom: 8px;">Giorno per uscita:</label>
-          <div style="display: flex; gap: 15px; margin-top: 5px;">
-            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0;">
-              <input type="radio" name="uscita-giorno" value="stesso" checked />
-              <span id="uscita-stesso-giorno">Stesso giorno</span>
-            </label>
-            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0;">
-              <input type="radio" name="uscita-giorno" value="successivo" />
-              <span id="uscita-giorno-successivo">Giorno successivo</span>
-            </label>
-          </div>
-        </div>
-        
+        <label for="modale-giorno-uscita">Giorno Uscita:</label>
+        <input type="date" id="modale-giorno-uscita" />
+
         <div class="modal-btns">
           <button type="button" id="btnSalva">Salva</button>
           <button type="button" id="btnElimina">Elimina</button>
@@ -812,7 +790,7 @@
         const dataFormattata = isMobile ? 
           `${giornoNumero} ${giornoSettimana.slice(0,3)}` : 
           `${giornoNumero}  ${giornoSettimana}`;
-        
+
         const timbratureOggi = timbrature.filter(t => {
           if (!t.data) return false;
           let dataTimbratura = t.data;
@@ -837,7 +815,7 @@
         // Se non ci sono timbrature, mostra riga vuota
         if (entrate.length === 0 && uscite.length === 0) {
           const riga = document.createElement("tr");
-          
+
           // Aggiungi classe weekend per sabati (6) e domeniche (0)
           if (current.getDay() === 0 || current.getDay() === 6) {
             riga.classList.add('weekend');
@@ -895,12 +873,12 @@
           if (entrata && uscita && entrata.ore && uscita.ore) {
             const inizio = new Date(`1970-01-01T${entrata.ore}`);
             const fine = new Date(`1970-01-01T${uscita.ore}`);
-            
+
             // Per timbrature extra (i > 0), controlla se l'uscita è nel giorno successivo
             if (i > 0) {
               const [hEntrata] = entrata.ore.split(":").map(Number);
               const [hUscita] = uscita.ore.split(":").map(Number);
-              
+
               // Se uscita è nelle prime ore del mattino (< 6) e entrata è nel pomeriggio/sera (> 12)
               // oppure se uscita è semplicemente minore di entrata, aggiungi un giorno
               if ((hUscita < 6 && hEntrata > 12) || fine <= inizio) {
@@ -910,7 +888,7 @@
               // Per la prima timbratura, logica standard
               fine.setDate(fine.getDate() + 1);
             }
-            
+
             const diffMs = fine - inizio;
             if (diffMs > 0) {
               const h = Math.floor(diffMs / (1000 * 60 * 60));
@@ -972,6 +950,8 @@
     const modaleDataInput = document.getElementById("modale-data");
     const modaleEntrataInput = document.getElementById("modale-entrata");
     const modaleUscitaInput = document.getElementById("modale-uscita");
+    const modaleGiornoEntrataInput = document.getElementById("modale-giorno-entrata");
+    const modaleGiornoUscitaInput = document.getElementById("modale-giorno-uscita");
     const btnSalva = document.getElementById("btnSalva");
     const btnElimina = document.getElementById("btnElimina");
     const btnChiudi = document.getElementById("btnChiudi");
@@ -990,7 +970,7 @@
       dataCorrenteModale = dataSelezionata;
       indiceCorrenteModale = indiceTimbratura;
       modaleDataInput.value = dataSelezionata;
-      
+
       const timbratureOggi = timbrature.filter(t => {
         let dataTimbratura = t.data;
         if (typeof dataTimbratura !== "string") {
@@ -1023,29 +1003,23 @@
       modaleEntrataInput.value = oraEntrata;
       modaleUscitaInput.value = oraUscita;
 
-      // Aggiorna i label dei giorni
-      const dataObj = new Date(dataSelezionata);
-      const giornoSuccessivo = new Date(dataObj);
-      giornoSuccessivo.setDate(giornoSuccessivo.getDate() + 1);
-      
-      document.getElementById('entrata-stesso-giorno').textContent = `${dataObj.getDate().toString().padStart(2, '0')}/${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
-      document.getElementById('entrata-giorno-successivo').textContent = `${giornoSuccessivo.getDate().toString().padStart(2, '0')}/${(giornoSuccessivo.getMonth()+1).toString().padStart(2, '0')}`;
-      document.getElementById('uscita-stesso-giorno').textContent = `${dataObj.getDate().toString().padStart(2, '0')}/${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
-      document.getElementById('uscita-giorno-successivo').textContent = `${giornoSuccessivo.getDate().toString().padStart(2, '0')}/${(giornoSuccessivo.getMonth()+1).toString().padStart(2, '0')}`;
+      // Inizializza i campi giorno - per default usa la data selezionata
+      modaleGiornoEntrataInput.value = dataSelezionata;
+      modaleGiornoUscitaInput.value = dataSelezionata;
 
-      // Imposta i radio button in base al giorno logico esistente
+      // Se esistono timbrature, usa i loro giorni logici
       if (timbraturaEntrataCorrente && timbraturaEntrataCorrente.giornologico) {
-        const giornoLogicoEntrata = timbraturaEntrataCorrente.giornologico;
-        const dataEntrataStr = typeof giornoLogicoEntrata === 'string' ? giornoLogicoEntrata : new Date(giornoLogicoEntrata).toISOString().split('T')[0];
-        const isSessoGiornoEntrata = dataEntrataStr === dataSelezionata;
-        document.querySelector(`input[name="entrata-giorno"][value="${isSessoGiornoEntrata ? 'stesso' : 'successivo'}"]`).checked = true;
+        const giornoLogico = typeof timbraturaEntrataCorrente.giornologico === 'string' ? 
+          timbraturaEntrataCorrente.giornologico : 
+          new Date(timbraturaEntrataCorrente.giornologico).toISOString().split('T')[0];
+        modaleGiornoEntrataInput.value = giornoLogico;
       }
-      
+
       if (timbraturaUscitaCorrente && timbraturaUscitaCorrente.giornologico) {
-        const giornoLogicoUscita = timbraturaUscitaCorrente.giornologico;
-        const dataUscitaStr = typeof giornoLogicoUscita === 'string' ? giornoLogicoUscita : new Date(giornoLogicoUscita).toISOString().split('T')[0];
-        const isSessoGiornoUscita = dataUscitaStr === dataSelezionata;
-        document.querySelector(`input[name="uscita-giorno"][value="${isSessoGiornoUscita ? 'stesso' : 'successivo'}"]`).checked = true;
+        const giornoLogico = typeof timbraturaUscitaCorrente.giornologico === 'string' ? 
+          timbraturaUscitaCorrente.giornologico : 
+          new Date(timbraturaUscitaCorrente.giornologico).toISOString().split('T')[0];
+        modaleGiornoUscitaInput.value = giornoLogico;
       }
 
       // Aggiorna il titolo della modale per indicare quale timbratura si sta modificando
@@ -1057,7 +1031,7 @@
       }
 
       modalOverlay.style.display = "flex";
-      
+
       // Mostra/nascondi i controlli del giorno quando l'utente inserisce un orario
       aggiungiListenerGiornoLogico();
     }
@@ -1078,7 +1052,7 @@
           container.style.display = 'none';
         }
       });
-      
+
       // Mostra controlli giorno per uscita quando viene inserito un orario
       modaleUscitaInput.addEventListener('input', function() {
         const container = document.getElementById('uscita-giorno-container');
@@ -1100,6 +1074,8 @@
     async function salvaModifiche() {
       const entrataVal = modaleEntrataInput.value;
       const uscitaVal = modaleUscitaInput.value;
+      const giornoEntrataVal = modaleGiornoEntrataInput.value;
+      const giornoUscitaVal = modaleGiornoUscitaInput.value;
       const pinVal = pin;
       const nomeVal = dipendente ? dipendente.nome : "";
       const cognomeVal = dipendente ? dipendente.cognome : "";
@@ -1119,7 +1095,7 @@
       if (!confirm("CONFERMI MODIFICHE?")) {
         return;
       }
-      async function upsertTimbratura(tipo, valore, timbraturaCorrente) {
+      async function upsertTimbratura(tipo, valore, timbraturaCorrente, giornoSelezionato) {
         if (!valore) {
           if (timbraturaCorrente && timbraturaCorrente.id) {
             const { error } = await supabase
@@ -1130,41 +1106,9 @@
           }
           return;
         }
-        
-        let dataDaUsare = dataCorrenteModale;
-        
-        // Leggi la selezione del giorno dall'interfaccia
-        const radioGiorno = document.querySelector(`input[name="${tipo}-giorno"]:checked`);
-        if (radioGiorno && radioGiorno.value === 'successivo') {
-          // Utente ha selezionato esplicitamente il giorno successivo
-          let d = new Date(dataCorrenteModale);
-          d.setDate(d.getDate() + 1);
-          dataDaUsare = d.toISOString().split("T")[0];
-        } else {
-          // Usa la logica automatica solo se non c'è selezione esplicita
-          const [h] = valore.split(":").map(Number);
-          
-          // Per timbrature extra (indice > 0), gestisci il giorno logico in modo diverso
-          if (indiceCorrenteModale > 0) {
-            // Per timbrature extra, se l'ora è < 6 (tipicamente ore notturne), 
-            // aggiungi un giorno alla data per indicare che è del giorno successivo
-            if (h < 6) {
-              let d = new Date(dataCorrenteModale);
-              d.setDate(d.getDate() + 1);
-              dataDaUsare = d.toISOString().split("T")[0];
-            } else {
-              // Per ore normali nelle timbrature extra, mantieni la data originale
-              dataDaUsare = dataCorrenteModale;
-            }
-          } else {
-            // Solo per la prima timbratura, applica la logica del giorno precedente per ore < 2
-            if (h < 2) {
-              let d = new Date(dataCorrenteModale);
-              d.setDate(d.getDate() - 1);
-              dataDaUsare = d.toISOString().split("T")[0];
-            }
-          }
-        }
+
+        // Usa il giorno selezionato dall'utente invece della logica automatica
+        const dataDaUsare = giornoSelezionato;
         if (timbraturaCorrente && timbraturaCorrente.id) {
           // Aggiornamento record esistente
           const updateData = {
@@ -1206,8 +1150,8 @@
           }
         }
       }
-      await upsertTimbratura("entrata", entrataVal, timbraturaEntrataCorrente);
-      await upsertTimbratura("uscita", uscitaVal, timbraturaUscitaCorrente);
+      await upsertTimbratura("entrata", entrataVal, timbraturaEntrataCorrente, giornoEntrataVal);
+      await upsertTimbratura("uscita", uscitaVal, timbraturaUscitaCorrente, giornoUscitaVal);
       await caricaDati();
       chiudiModale();
     }
@@ -1216,13 +1160,13 @@
       const messaggioConferma = indiceCorrenteModale === 0 ? 
         "Vuoi eliminare TUTTE le timbrature del giorno o solo questa coppia?\n\nOK = SOLO questa coppia\nANNULLA = TUTTE le timbrature" :
         "CONFERMI ELIMINAZIONE di questa timbratura extra?";
-      
+
       const eliminaSoloQuesta = confirm(messaggioConferma);
-      
+
       if (indiceCorrenteModale === 0 && !eliminaSoloQuesta) {
         // Elimina tutte le timbrature del giorno
         if (!confirm("CONFERMI ELIMINAZIONE di TUTTE le timbrature del giorno?")) return;
-        
+
         const daEliminare = timbrature.filter(t => {
           let dataTimbratura = t.data;
           if (typeof dataTimbratura !== "string") {
@@ -1230,7 +1174,7 @@
           }
           return dataTimbratura === dataCorrenteModale;
         });
-        
+
         for (const t of daEliminare) {
           if (t.id) {
             const { error } = await supabase
@@ -1249,7 +1193,7 @@
             .eq("id", timbraturaEntrataCorrente.id);
           if (error) alert("Errore eliminazione entrata: " + error.message);
         }
-        
+
         if (timbraturaUscitaCorrente && timbraturaUscitaCorrente.id) {
           const { error } = await supabase
             .from("timbrature")
@@ -1258,7 +1202,7 @@
           if (error) alert("Errore eliminazione uscita: " + error.message);
         }
       }
-      
+
       await caricaDati();
       chiudiModale();
     }

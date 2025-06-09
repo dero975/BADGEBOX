@@ -820,9 +820,13 @@
         // Filtra solo le timbrature nella fascia lavorativa
         const timbratureLavorative = timbratureOggi.filter(t => isOrarioLavorativo(t.ore));
 
-        // Prendi la prima entrata e la prima uscita nella fascia lavorativa
-        const entrata = timbratureLavorative.find(t => t.tipo === "entrata") || null;
-        const uscita = timbratureLavorative.find(t => t.tipo === "uscita") || null;
+        // Separa entrate e uscite
+        const entrate = timbratureLavorative.filter(t => t.tipo === "entrata");
+        const uscite = timbratureLavorative.filter(t => t.tipo === "uscita");
+
+        // Prima timbratura (riga principale)
+        const primaEntrata = entrate[0] || null;
+        const primaUscita = uscite[0] || null;
 
         const riga = document.createElement("tr");
         
@@ -831,15 +835,15 @@
           riga.classList.add('weekend');
         }
 
-        const oraEntrataDisplay = entrata && entrata.ore ? entrata.ore.slice(0,5) : '—';
-        const oraUscitaDisplay = uscita && uscita.ore ? uscita.ore.slice(0,5) : '—';
+        const oraEntrataDisplay = primaEntrata && primaEntrata.ore ? primaEntrata.ore.slice(0,5) : '—';
+        const oraUscitaDisplay = primaUscita && primaUscita.ore ? primaUscita.ore.slice(0,5) : '—';
 
         // Calcola ore lavorate con la nuova logica
         let oreLavorate = "—";
         let oreTotaliGiorno = 0;
-        if (entrata && uscita && entrata.ore && uscita.ore) {
-          const [hEntrata, mEntrata] = entrata.ore.split(":").map(Number);
-          const [hUscita, mUscita] = uscita.ore.split(":").map(Number);
+        if (primaEntrata && primaUscita && primaEntrata.ore && primaUscita.ore) {
+          const [hEntrata, mEntrata] = primaEntrata.ore.split(":").map(Number);
+          const [hUscita, mUscita] = primaUscita.ore.split(":").map(Number);
           
           const minutiEntrata = hEntrata * 60 + mEntrata;
           const minutiUscita = hUscita * 60 + mUscita;
@@ -882,6 +886,55 @@
           </td>
         `;
         tbody.appendChild(riga);
+
+        // Aggiungi righe EXTRA per timbrature successive
+        const maxExtra = Math.max(entrate.length - 1, uscite.length - 1);
+        for (let i = 1; i <= maxExtra; i++) {
+          const entrataExtra = entrate[i] || null;
+          const uscitaExtra = uscite[i] || null;
+          
+          const rigaExtra = document.createElement("tr");
+          if (current.getDay() === 0 || current.getDay() === 6) {
+            rigaExtra.classList.add('weekend');
+          }
+          
+          const oraEntrataExtraDisplay = entrataExtra && entrataExtra.ore ? entrataExtra.ore.slice(0,5) : '—';
+          const oraUscitaExtraDisplay = uscitaExtra && uscitaExtra.ore ? uscitaExtra.ore.slice(0,5) : '—';
+          
+          // Calcola ore extra se entrambe presenti
+          let oreLavorateExtra = "—";
+          if (entrataExtra && uscitaExtra && entrataExtra.ore && uscitaExtra.ore) {
+            const [hEntrata, mEntrata] = entrataExtra.ore.split(":").map(Number);
+            const [hUscita, mUscita] = uscitaExtra.ore.split(":").map(Number);
+            
+            const minutiEntrata = hEntrata * 60 + mEntrata;
+            const minutiUscita = hUscita * 60 + mUscita;
+            
+            let minutiLavorati = 0;
+            
+            if ((minutiEntrata >= 480 && minutiUscita >= 480) || (minutiEntrata <= 299 && minutiUscita <= 299)) {
+              minutiLavorati = minutiUscita - minutiEntrata;
+            } else if (minutiEntrata >= 480 && minutiUscita <= 299) {
+              minutiLavorati = (1440 - minutiEntrata) + minutiUscita;
+            }
+            
+            if (minutiLavorati > 0) {
+              const h = Math.floor(minutiLavorati / 60);
+              const m = minutiLavorati % 60;
+              oreLavorateExtra = `${h}:${m.toString().padStart(2, '0')}`;
+              oreTotaliGiorno += h + m / 60;
+            }
+          }
+          
+          rigaExtra.innerHTML = `
+            <td style="text-align: left; color: #ffff99; font-size: 12px;">EXTRA ${i}</td>
+            <td style="color: #ffff99; font-size: 12px;">${oraEntrataExtraDisplay}</td>
+            <td style="color: #ffff99; font-size: 12px;">${oraUscitaExtraDisplay}</td>
+            <td style="color: #ffff99; font-size: 12px;">${oreLavorateExtra}</td>
+            <td></td>
+          `;
+          tbody.appendChild(rigaExtra);
+        }
 
         totaleMensileOre += oreTotaliGiorno;
       }

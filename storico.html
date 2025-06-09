@@ -980,58 +980,48 @@
     }
     async function apriModale(dataSelezionata) {
       dataCorrenteModale = dataSelezionata;
-      modaleDataInput.value = dataSelezionata;
       
-      // Filtra timbrature per il giorno corrente E il giorno successivo (per le uscite notturne)
+      // Filtra timbrature del giorno selezionato (considerando anche le notturne del giorno dopo)
       const timbratureOggi = timbrature.filter(t => {
-        if (!t.data) return false;
-        let dataTimbratura = t.data;
-        if (typeof dataTimbratura !== "string") {
-          dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
+        if (!t.giornologico) return false;
+        let gLogico = t.giornologico;
+        if (typeof gLogico !== "string") {
+          gLogico = new Date(gLogico).toISOString().split("T")[0];
         }
-        
-        // Prendi timbrature del giorno corrente
-        if (dataTimbratura === dataSelezionata) return true;
-        
-        // Prendi anche timbrature del giorno successivo se sono nella fascia 00:00-04:59
-        const giornoSuccessivo = new Date(dataSelezionata);
-        giornoSuccessivo.setDate(giornoSuccessivo.getDate() + 1);
-        const dataSuccessivaISO = giornoSuccessivo.toISOString().split("T")[0];
-        
-        if (dataTimbratura === dataSuccessivaISO && t.ore) {
-          const [h] = t.ore.split(":").map(Number);
-          return h >= 0 && h <= 4; // Solo timbrature 00:00-04:59 del giorno dopo
-        }
-        
-        return false;
+        return gLogico === dataSelezionata;
       });
 
-      // Ordina le timbrature per ora
-      timbratureOggi.sort((a, b) => {
-        if (a.ore && b.ore) {
-          return a.ore.localeCompare(b.ore);
-        }
-        return 0;
-      });
+      // Separa entrate e uscite e ordinale per ora
+      const entrate = timbratureOggi.filter(t => t.tipo === "entrata").sort((a, b) => a.ore.localeCompare(b.ore));
+      const uscite = timbratureOggi.filter(t => t.tipo === "uscita").sort((a, b) => a.ore.localeCompare(b.ore));
 
-      // Filtra solo le timbrature nella fascia lavorativa
-      function isOrarioLavorativo(ore) {
-        if (!ore) return false;
-        const [h, m] = ore.split(":").map(Number);
-        const minuti = h * 60 + m;
-        
-        // Fascia lavorativa: 08:00-23:59 (stesso giorno) + 00:00-04:59 (giorno dopo)
-        return (minuti >= 480 && minuti <= 1439) || (minuti >= 0 && minuti <= 299);
-      }
+      // Trova la prima entrata e uscita per il modale semplificato
+      timbraturaEntrataCorrente = entrate[0] || null;
+      timbraturaUscitaCorrente = uscite[0] || null;
 
-      const timbratureLavorative = timbratureOggi.filter(t => isOrarioLavorativo(t.ore));
+      // Modale semplificato - solo prima entrata e uscita
+      const modal = document.getElementById("modal");
+      modal.innerHTML = `
+        <h2>Modifica Timbrature</h2>
+        <form id="modaleForm">
+          <label>Data:</label>
+          <input type="date" id="modale-data" value="${dataSelezionata}" disabled />
+          <label for="modale-entrata">Entrata:</label>
+          <input type="time" id="modale-entrata" value="${timbraturaEntrataCorrente ? timbraturaEntrataCorrente.ore.slice(0,5) : ''}" />
+          <label for="modale-uscita">Uscita:</label>
+          <input type="time" id="modale-uscita" value="${timbraturaUscitaCorrente ? timbraturaUscitaCorrente.ore.slice(0,5) : ''}" />
+          <div class="modal-btns">
+            <button type="button" id="btnSalva">Salva</button>
+            <button type="button" id="btnElimina">Elimina</button>
+            <button type="button" id="btnChiudi">Chiudi</button>
+          </div>
+        </form>
+      `;
 
-      // Separa entrate e uscite
-      const entrate = timbratureLavorative.filter(t => t.tipo === "entrata");
-      const uscite = timbratureLavorative.filter(t => t.tipo === "uscita");
-
-      // Ricostruisci il modale con tutti i campi necessari
-      ricostruisciModale(entrate, uscite);
+      // Aggiungi event listeners
+      document.getElementById("btnSalva").addEventListener("click", salvaModifiche);
+      document.getElementById("btnElimina").addEventListener("click", eliminaTimbratureGiorno);
+      document.getElementById("btnChiudi").addEventListener("click", chiudiModale);
       
       modalOverlay.style.display = "flex";
     }
@@ -1187,9 +1177,11 @@
     }
 
     async function salvaModifiche() {
-      // Questa funzione è mantenuta per compatibilità ma non più utilizzata
-      const entrataVal = modaleEntrataInput.value;
-      const uscitaVal = modaleUscitaInput.value;
+      const entrataInput = document.getElementById("modale-entrata");
+      const uscitaInput = document.getElementById("modale-uscita");
+      
+      const entrataVal = entrataInput.value;
+      const uscitaVal = uscitaInput.value;
       const pinVal = pin;
       const nomeVal = dipendente ? dipendente.nome : "";
       const cognomeVal = dipendente ? dipendente.cognome : "";
@@ -1199,18 +1191,13 @@
         return;
       }
 
-      // Validazione: entrambi i campi devono essere compilati
-      if (!entrataVal || !uscitaVal) {
-        alert("Attenzione: Per salvare le modifiche è necessario compilare sia l'orario di ENTRATA che quello di USCITA.");
-        return;
-      }
-
       // Conferma salvataggio
       if (!confirm("CONFERMI MODIFICHE?")) {
         return;
       }
       async function upsertTimbratura(tipo, valore, timbraturaCorrente) {
         if (!valore) {
+          // Se il valore è vuoto, elimina la timbratura esistente
           if (timbraturaCorrente && timbraturaCorrente.id) {
             const { error } = await supabase
               .from("timbrature")
@@ -1221,29 +1208,26 @@
           return;
         }
 
-        // Nuova logica per determinare la data da usare
+        // Determina la data cronologica da usare
         let dataDaUsare = dataCorrenteModale;
         const [h] = valore.split(":").map(Number);
         
-        // Se l'orario è nella fascia notturna (00:00-04:59), appartiene al giorno lavorativo precedente
+        // Se l'orario è nella fascia notturna (00:00-04:59), la data cronologica è il giorno dopo
         if (h >= 0 && h <= 4) {
-          // La data rimane quella del giorno lavorativo (dataCorrenteModale)
-          // ma nel campo 'data' salviamo il giorno successivo per mantenere la cronologia corretta
           let d = new Date(dataCorrenteModale);
           d.setDate(d.getDate() + 1);
           dataDaUsare = d.toISOString().split("T")[0];
         }
-        if (timbraturaCorrente && timbraturaCorrente.id) {
-          // Aggiornamento record esistente
-          const updateData = {
-            ore: valore,
-            giornologico: dataCorrenteModale, // Giorno lavorativo di appartenenza
-            data: dataDaUsare // Data cronologica effettiva
-          };
 
+        if (timbraturaCorrente && timbraturaCorrente.id) {
+          // Aggiorna record esistente
           const { data, error } = await supabase
             .from("timbrature")
-            .update(updateData)
+            .update({
+              ore: valore,
+              data: dataDaUsare,
+              giornologico: dataCorrenteModale
+            })
             .eq("id", timbraturaCorrente.id)
             .select();
 
@@ -1252,20 +1236,18 @@
             alert("Errore aggiornamento: " + error.message);
           }
         } else {
-          // Inserimento nuovo record
-          const insertData = {
-            tipo: tipo,
-            pin: pinVal,
-            nome: nomeVal,
-            cognome: cognomeVal,
-            data: dataDaUsare, // Data cronologica effettiva
-            ore: valore,
-            giornologico: dataCorrenteModale // Giorno lavorativo di appartenenza
-          };
-
+          // Inserisci nuovo record
           const { data, error } = await supabase
             .from("timbrature")
-            .insert([insertData])
+            .insert([{
+              tipo: tipo,
+              pin: pinVal,
+              nome: nomeVal,
+              cognome: cognomeVal,
+              data: dataDaUsare,
+              ore: valore,
+              giornologico: dataCorrenteModale
+            }])
             .select();
 
           if (error) {
@@ -1280,21 +1262,28 @@
       chiudiModale();
     }
     async function eliminaTimbratureGiorno() {
-      if (!confirm("CONFERMI MODIFICHE?")) return;
+      if (!confirm("CONFERMI ELIMINAZIONE?")) return;
+      
       const daEliminare = timbrature.filter(t => {
-        let dataTimbratura = t.data;
-        if (typeof dataTimbratura !== "string") {
-          dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
+        if (!t.giornologico) return false;
+        let gLogico = t.giornologico;
+        if (typeof gLogico !== "string") {
+          gLogico = new Date(gLogico).toISOString().split("T")[0];
         }
-        return dataTimbratura === dataCorrenteModale;
+        return gLogico === dataCorrenteModale;
       });
+      
       for (const t of daEliminare) {
         if (t.id) {
           const { error } = await supabase
             .from("timbrature")
             .delete()
             .eq("id", t.id);
-          if (error) alert("Errore eliminazione: " + error.message);
+          if (error) {
+            console.error("Errore eliminazione:", error);
+            alert("Errore eliminazione: " + error.message);
+            return;
+          }
         }
       }
       await caricaDati();

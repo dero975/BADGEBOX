@@ -645,7 +645,8 @@
       const { data: datiUtente, error: errUtente } = await supabase
         .from("utenti")
         .select("nome, cognome, email")
-        .eq("pin", parseInt(pin))
+        .or(`pin.eq.${pin},pin.eq.${parseInt(pin)}`)
+        .limit(1)
         .single();
       if (errUtente) {
         console.error("Errore recupero utente:", errUtente.message);
@@ -661,10 +662,10 @@
       const { data, error } = await supabase
         .from("timbrature")
         .select("*")
-        .or(`pin.eq.${pin},pin.eq.${parseInt(pin)}`)
-        .gte("giornologico", dataInizio.value)
-        .lte("giornologico", dataFine.value)
-        .order("giornologico", { ascending: true })
+        .eq("pin", parseInt(pin))
+        .gte("data", dataInizio.value)
+        .lte("data", dataFine.value)
+        .order("data", { ascending: true })
         .order("tipo", { ascending: true });
 
       if (error) {
@@ -712,7 +713,6 @@
           if (typeof dataTimbratura !== "string") {
             dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
           }
-          console.log(`Confronto: ${dataTimbratura} === ${dataISO} per PIN ${t.pin}`);
           return dataTimbratura === dataISO;
         });
 
@@ -805,10 +805,11 @@
       dataCorrenteModale = dataSelezionata;
       modaleDataInput.value = dataSelezionata;
       const timbratureOggi = timbrature.filter(t => {
-        let gLogico = t.giornologico;
-        if (typeof gLogico !== "string") {
-          gLogico = new Date(gLogico).toISOString().split("T")[0];        }
-        return gLogico === dataSelezionata;
+        let dataTimbratura = t.data;
+        if (typeof dataTimbratura !== "string") {
+          dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
+        }
+        return dataTimbratura === dataSelezionata;
       });      timbraturaEntrataCorrente = timbratureOggi.find(t => t.tipo === "entrata") || null;
       timbraturaUscitaCorrente = timbratureOggi.find(t => t.tipo === "uscita") || null;
       const oraEntrata = timbraturaEntrataCorrente && timbraturaEntrataCorrente.ore ? 
@@ -912,11 +913,11 @@
     async function eliminaTimbratureGiorno() {
       if (!confirm("CONFERMI MODIFICHE?")) return;
       const daEliminare = timbrature.filter(t => {
-        let gLogico = t.giornologico;
-        if (typeof gLogico !== "string") {
-          gLogico = new Date(gLogico).toISOString().split("T")[0];
+        let dataTimbratura = t.data;
+        if (typeof dataTimbratura !== "string") {
+          dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
         }
-        return gLogico === dataCorrenteModale;
+        return dataTimbratura === dataCorrenteModale;
       });
       for (const t of daEliminare) {
         if (t.id) {

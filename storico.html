@@ -842,6 +842,12 @@
         alert("Attenzione: Per salvare le modifiche è necessario compilare sia l'orario di ENTRATA che quello di USCITA.");
         return;
       }
+
+      // Conferma salvataggio
+      const dataFormattata = formatDataIT(dataCorrenteModale);
+      if (!confirm(`Sei sicuro di voler salvare le modifiche per il giorno ${dataFormattata}?\n\nEntrata: ${entrataVal}\nUscita: ${uscitaVal}`)) {
+        return;
+      }
       async function upsertTimbratura(tipo, valore, timbraturaCorrente) {
         if (!valore) {
           if (timbraturaCorrente && timbraturaCorrente.id) {
@@ -907,7 +913,11 @@
       chiudiModale();
     }
     async function eliminaTimbratureGiorno() {
-      if (!confirm("Sei sicuro di voler eliminare tutte le timbrature di questo giorno?")) return;
+      const dataFormattata = formatDataIT(dataCorrenteModale);
+      const entrataVal = modaleEntrataInput.value || "—";
+      const uscitaVal = modaleUscitaInput.value || "—";
+      
+      if (!confirm(`Sei sicuro di voler eliminare tutte le timbrature del giorno ${dataFormattata}?\n\nEntrata: ${entrataVal}\nUscita: ${uscitaVal}\n\nQuesta operazione non può essere annullata.`)) return;
       const daEliminare = timbrature.filter(t => {
         let gLogico = t.giornologico;
         if (typeof gLogico !== "string") {

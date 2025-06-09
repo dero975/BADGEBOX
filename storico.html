@@ -371,7 +371,7 @@
         <option value="corrente">Mese corrente</option>
         <option value="precedente">Mese precedente</option>
         <option value="due-precedenti">2 mesi precedenti</option>
-        <option value="personalizzato" style="color: #ffffe0; background-color: #1e293b;">Personaliizato</option>
+        <option value="personalizzato" style="color: #ffffe0; background-color: #1e293b; display: none;">Personalizzato</option>
       </select>
       <div class="data-container">
         <input type="date" id="data-inizio" />
@@ -490,7 +490,11 @@
       console.log(`Ultimo giorno del mese: ${ultimoGiorno}`);
     }
     selectFiltro.addEventListener("change", () => {
+      const opzionePersonalizzato = selectFiltro.querySelector('option[value="personalizzato"]');
+      
       if (selectFiltro.value !== "personalizzato") {
+        // Nasconde l'opzione personalizzato quando si seleziona un periodo predefinito
+        opzionePersonalizzato.style.display = 'none';
         aggiornaRange(selectFiltro.value);
       }
       caricaDati();
@@ -498,11 +502,15 @@
     
     // Quando l'utente modifica manualmente le date, passa a "personalizzato"
     dataInizio.addEventListener("change", () => {
+      const opzionePersonalizzato = selectFiltro.querySelector('option[value="personalizzato"]');
+      opzionePersonalizzato.style.display = 'block';
       selectFiltro.value = "personalizzato";
       caricaDati();
     });
     
     dataFine.addEventListener("change", () => {
+      const opzionePersonalizzato = selectFiltro.querySelector('option[value="personalizzato"]');
+      opzionePersonalizzato.style.display = 'block';
       selectFiltro.value = "personalizzato";
       caricaDati();
     });

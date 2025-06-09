@@ -293,6 +293,21 @@
       width: 24px;
       height: 24px;
     }
+    
+    /* Icona PDF personalizzata */
+    .pdf-icon {
+      display: inline-block;
+      background-color: #dc3545;
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 2px 4px;
+      border-radius: 3px;
+      min-width: 20px;
+      text-align: center;
+      line-height: 1.2;
+      letter-spacing: 0.5px;
+    }
   </style>
 </head>
 <body>
@@ -338,7 +353,7 @@
         <img src="assets/icons/freccia.png" alt="Torna Archivio" />
       </button>
       <button id="btn-invia" title="Invia Mail">
-        📄
+        <span class="pdf-icon">PDF</span>
       </button>
       <button id="btn-esporta" title="Esporta Excel">
         <img src="assets/icons/esporta.png" alt="Esporta Excel" />

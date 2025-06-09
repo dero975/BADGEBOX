@@ -210,6 +210,133 @@
         background-color: #dc2626 !important;
         color: white;
       }
+
+    /* Media query per mobile */
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+
+      .data-ora {
+        font-size: 14px;
+        margin-bottom: 15px;
+      }
+
+      .data-ora h2 {
+        font-size: 20px;
+        margin-bottom: 2px;
+      }
+
+      .logo {
+        width: 100px;
+        margin-bottom: -8px;
+      }
+
+      .pin-container {
+        margin-bottom: 20px;
+      }
+
+      .pin-input {
+        font-size: 16px;
+        padding: 10px 15px;
+        width: 90%;
+        max-width: 250px;
+      }
+
+      .keypad {
+        gap: 10px;
+        max-width: 280px;
+      }
+
+      .key {
+        width: 50px;
+        height: 50px;
+        font-size: 16px;
+      }
+
+      .button-container {
+        margin-top: 20px;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 250px;
+      }
+
+      .btn {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+      }
+
+      .status {
+        font-size: 14px;
+        margin-top: 15px;
+        max-width: 90%;
+      }
+    }
+
+    /* Media query per schermi molto piccoli (ottimizzazione aggiuntiva) */
+    @media (max-width: 480px) {
+      .container {
+        padding: 10px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .logo {
+        width: 90px;
+        margin-bottom: -5px;
+      }
+
+      .data-ora {
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+
+      .data-ora h2 {
+        font-size: 18px;
+      }
+
+      .pin-input {
+        font-size: 18px;
+        padding: 12px 16px;
+        max-width: 200px;
+        border-radius: 8px;
+      }
+
+      .keypad {
+        gap: 8px;
+        max-width: 240px;
+        margin: 15px auto;
+      }
+
+      .key {
+        width: 45px;
+        height: 45px;
+        font-size: 15px;
+        border-radius: 50%;
+      }
+
+      .button-container {
+        margin-top: 15px;
+        gap: 8px;
+        max-width: 200px;
+      }
+
+      .btn {
+        padding: 10px;
+        font-size: 15px;
+        border-radius: 8px;
+      }
+
+      .status {
+        font-size: 13px;
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 6px;
+      }
+    }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
     <script type="module">

@@ -854,8 +854,7 @@
 
           // Applica stile per timbrature extra
           if (isTimbrataExtra) {
-            riga.style.backgroundColor = '#2a2416'; // Giallo scuro per leggibilità
-            riga.style.color = '#fef08a'; // Testo giallo chiaro
+            riga.classList.add('timbratura-extra');
           }
 
           const oraEntrataDisplay = entrata && entrata.ore ? entrata.ore.slice(0,5) : '—';
@@ -878,16 +877,18 @@
           const dataDisplay = isPrimaTimbrata ? dataFormattata : '';
 
           riga.innerHTML = `
-            <td style="text-align: left; ${isTimbrataExtra ? 'color: #fef08a; font-style: italic;' : ''}">${dataDisplay}</td>
-            <td style="${isTimbrataExtra ? 'color: #fef08a;' : ''}">${oraEntrataDisplay}</td>
-            <td style="${isTimbrataExtra ? 'color: #fef08a;' : ''}">${oraUscitaDisplay}</td>
-            <td style="color: #ffff99; ${isTimbrataExtra ? 'font-weight: normal;' : ''}">${oreLavorate}</td>
+            <td style="text-align: left;">${dataDisplay}</td>
+            <td>${oraEntrataDisplay}</td>
+            <td>${oraUscitaDisplay}</td>
+            <td style="color: #ffff99;">${oreLavorate}</td>
             <td>
               <img
                 src="assets/icons/matita-colorata.png"
                 class="modifica-icon"
                 data-data="${dataISO}"
                 data-indice="${i}"
+                data-entrata-id="${entrata ? entrata.id : ''}"
+                data-uscita-id="${uscita ? uscita.id : ''}"
                 title="Modifica ${isTimbrataExtra ? 'Timbratura Extra' : 'Timbratura'}"
                 alt="Modifica"
                 style="${isTimbrataExtra ? 'opacity: 0.8;' : ''}"
@@ -918,7 +919,9 @@
         icon.addEventListener("click", () => {
           const dataSelezionata = icon.dataset.data;
           const indiceTimbratura = parseInt(icon.dataset.indice) || 0;
-          apriModale(dataSelezionata, indiceTimbratura);
+          const entrataId = icon.dataset.entrataId;
+          const uscitaId = icon.dataset.uscitaId;
+          apriModaleConId(dataSelezionata, indiceTimbratura, entrataId, uscitaId);
         });
       });
     }
@@ -961,11 +964,11 @@
         return 0;
       });
 
-      // Raggruppa entrate e uscite
-      const entrate = timbratureOggi.filter(t => t.tipo === "entrata");
-      const uscite = timbratureOggi.filter(t => t.tipo === "uscita");
+      // Raggruppa entrate e uscite mantenendo l'ordine cronologico
+      const entrate = timbratureOggi.filter(t => t.tipo === "entrata").sort((a, b) => a.ore.localeCompare(b.ore));
+      const uscite = timbratureOggi.filter(t => t.tipo === "uscita").sort((a, b) => a.ore.localeCompare(b.ore));
 
-      // Seleziona la coppia specifica in base all'indice
+      // Seleziona la coppia specifica in base all'indice - FIX CRITICO
       timbraturaEntrataCorrente = entrate[indiceTimbratura] || null;
       timbraturaUscitaCorrente = uscite[indiceTimbratura] || null;
 
@@ -978,6 +981,39 @@
       modaleUscitaInput.value = oraUscita;
 
       // Aggiorna il titolo della modale per indicare quale timbratura si sta modificando
+      const titoloModale = document.querySelector('#modal h2');
+      if (indiceTimbratura === 0) {
+        titoloModale.textContent = 'Modifica Timbrature';
+      } else {
+        titoloModale.textContent = `Modifica Timbrature Extra #${indiceTimbratura + 1}`;
+      }
+
+      modalOverlay.style.display = "flex";
+    }
+
+    // Nuova funzione per gestire identificazione tramite ID specifici
+    async function apriModaleConId(dataSelezionata, indiceTimbratura, entrataId, uscitaId) {
+      dataCorrenteModale = dataSelezionata;
+      indiceCorrenteModale = indiceTimbratura;
+      modaleDataInput.value = dataSelezionata;
+      
+      // Trova le timbrature specifiche tramite ID
+      timbraturaEntrataCorrente = entrataId ? timbrature.find(t => t.id.toString() === entrataId) || null : null;
+      timbraturaUscitaCorrente = uscitaId ? timbrature.find(t => t.id.toString() === uscitaId) || null : null;
+
+      console.log("Modifica timbratura - Entrata ID:", entrataId, "Uscita ID:", uscitaId);
+      console.log("Entrata trovata:", timbraturaEntrataCorrente);
+      console.log("Uscita trovata:", timbraturaUscitaCorrente);
+
+      const oraEntrata = timbraturaEntrataCorrente && timbraturaEntrataCorrente.ore ? 
+        timbraturaEntrataCorrente.ore.slice(0,5) : "";
+      const oraUscita = timbraturaUscitaCorrente && timbraturaUscitaCorrente.ore ? 
+        timbraturaUscitaCorrente.ore.slice(0,5) : "";
+
+      modaleEntrataInput.value = oraEntrata;
+      modaleUscitaInput.value = oraUscita;
+
+      // Aggiorna il titolo della modale
       const titoloModale = document.querySelector('#modal h2');
       if (indiceTimbratura === 0) {
         titoloModale.textContent = 'Modifica Timbrature';

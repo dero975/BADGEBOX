@@ -713,7 +713,9 @@
     });
 
     // Inizializza EmailJS
-    emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); // Sostituisci con la tua Public Key da EmailJS
+    // IMPORTANTE: Sostituisci "YOUR_EMAILJS_PUBLIC_KEY" con la tua chiave pubblica da EmailJS
+    // La trovi in: Account -> API Keys -> Public Key
+    emailjs.init("YOUR_EMAILJS_PUBLIC_KEY");
 
     // Funzione per inviare PDF via email
     document.getElementById("btn-invia").addEventListener("click", () => {
@@ -851,6 +853,9 @@
         };
         
         // Invia email tramite EmailJS
+        // IMPORTANTE: Sostituisci con i tuoi ID reali:
+        // YOUR_SERVICE_ID: ID del servizio email (es. Gmail, Outlook, ecc.)
+        // YOUR_TEMPLATE_ID: ID del template che stai configurando (visibile nel dashboard)
         await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams);
         
         // Successo

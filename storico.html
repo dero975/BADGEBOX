@@ -844,8 +844,7 @@
       }
 
       // Conferma salvataggio
-      const dataFormattata = formatDataIT(dataCorrenteModale);
-      if (!confirm(`Sei sicuro di voler salvare le modifiche per il giorno ${dataFormattata}?\n\nEntrata: ${entrataVal}\nUscita: ${uscitaVal}`)) {
+      if (!confirm("CONFERMI MODIFICHE?")) {
         return;
       }
       async function upsertTimbratura(tipo, valore, timbraturaCorrente) {
@@ -913,11 +912,7 @@
       chiudiModale();
     }
     async function eliminaTimbratureGiorno() {
-      const dataFormattata = formatDataIT(dataCorrenteModale);
-      const entrataVal = modaleEntrataInput.value || "—";
-      const uscitaVal = modaleUscitaInput.value || "—";
-      
-      if (!confirm(`Sei sicuro di voler eliminare tutte le timbrature del giorno ${dataFormattata}?\n\nEntrata: ${entrataVal}\nUscita: ${uscitaVal}\n\nQuesta operazione non può essere annullata.`)) return;
+      if (!confirm("CONFERMI MODIFICHE?")) return;
       const daEliminare = timbrature.filter(t => {
         let gLogico = t.giornologico;
         if (typeof gLogico !== "string") {

@@ -775,13 +775,28 @@
           `${giornoNumero} ${giornoSettimana.slice(0,3)}` : 
           `${giornoNumero}  ${giornoSettimana}`;
         
+        // Filtra timbrature per il giorno corrente E il giorno precedente (per catturare le uscite notturne)
         const timbratureOggi = timbrature.filter(t => {
           if (!t.data) return false;
           let dataTimbratura = t.data;
           if (typeof dataTimbratura !== "string") {
             dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
           }
-          return dataTimbratura === dataISO;
+          
+          // Prendi timbrature del giorno corrente
+          if (dataTimbratura === dataISO) return true;
+          
+          // Prendi anche timbrature del giorno successivo se sono nella fascia 00:00-04:59
+          const giornoSuccessivo = new Date(current);
+          giornoSuccessivo.setDate(giornoSuccessivo.getDate() + 1);
+          const dataSuccessivaISO = giornoSuccessivo.toISOString().split("T")[0];
+          
+          if (dataTimbratura === dataSuccessivaISO && t.ore) {
+            const [h] = t.ore.split(":").map(Number);
+            return h >= 0 && h <= 4; // Solo timbrature 00:00-04:59 del giorno dopo
+          }
+          
+          return false;
         });
 
         // Ordina le timbrature per ora
@@ -792,9 +807,22 @@
           return 0;
         });
 
-        // Prendi solo la prima entrata e la prima uscita del giorno
-        const entrata = timbratureOggi.find(t => t.tipo === "entrata") || null;
-        const uscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
+        // Funzione per determinare se un orario è nella fascia lavorativa (08:00-04:59)
+        function isOrarioLavorativo(ore) {
+          if (!ore) return false;
+          const [h, m] = ore.split(":").map(Number);
+          const minuti = h * 60 + m;
+          
+          // Fascia lavorativa: 08:00-23:59 (stesso giorno) + 00:00-04:59 (giorno dopo)
+          return (minuti >= 480 && minuti <= 1439) || (minuti >= 0 && minuti <= 299);
+        }
+
+        // Filtra solo le timbrature nella fascia lavorativa
+        const timbratureLavorative = timbratureOggi.filter(t => isOrarioLavorativo(t.ore));
+
+        // Prendi la prima entrata e la prima uscita nella fascia lavorativa
+        const entrata = timbratureLavorative.find(t => t.tipo === "entrata") || null;
+        const uscita = timbratureLavorative.find(t => t.tipo === "uscita") || null;
 
         const riga = document.createElement("tr");
         
@@ -806,28 +834,36 @@
         const oraEntrataDisplay = entrata && entrata.ore ? entrata.ore.slice(0,5) : '—';
         const oraUscitaDisplay = uscita && uscita.ore ? uscita.ore.slice(0,5) : '—';
 
-        // Calcola ore lavorate
+        // Calcola ore lavorate con la nuova logica
         let oreLavorate = "—";
         let oreTotaliGiorno = 0;
         if (entrata && uscita && entrata.ore && uscita.ore) {
-          const inizio = new Date(`1970-01-01T${entrata.ore}`);
-          const fine = new Date(`1970-01-01T${uscita.ore}`);
+          const [hEntrata, mEntrata] = entrata.ore.split(":").map(Number);
+          const [hUscita, mUscita] = uscita.ore.split(":").map(Number);
           
-          // Se l'uscita è nelle prime ore del mattino (00:00-04:59), è del giorno successivo
-          const [hUscita] = uscita.ore.split(":").map(Number);
-          if (hUscita >= 0 && hUscita <= 4) {
-            fine.setDate(fine.getDate() + 1);
+          const minutiEntrata = hEntrata * 60 + mEntrata;
+          const minutiUscita = hUscita * 60 + mUscita;
+          
+          let minutiLavorati = 0;
+          
+          // Se entrata e uscita sono entrambe nella stessa fascia oraria del giorno
+          if ((minutiEntrata >= 480 && minutiUscita >= 480) || (minutiEntrata <= 299 && minutiUscita <= 299)) {
+            minutiLavorati = minutiUscita - minutiEntrata;
           }
-          // Altrimenti se uscita è prima di entrata, aggiungi un giorno
-          else if (fine < inizio) {
-            fine.setDate(fine.getDate() + 1);
+          // Se entrata è nella fascia serale (>=08:00) e uscita nella fascia notturna (<=04:59)
+          else if (minutiEntrata >= 480 && minutiUscita <= 299) {
+            // Minuti dalla entrata fino alla mezzanotte (1440 - minutiEntrata)
+            // + minuti dalla mezzanotte all'uscita (minutiUscita)
+            minutiLavorati = (1440 - minutiEntrata) + minutiUscita;
           }
           
-          const diffMs = fine - inizio;
-          const h = Math.floor(diffMs / (1000 * 60 * 60));
-          const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-          oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
-          oreTotaliGiorno = h + m / 60;
+          // Converti in ore e minuti solo se i minuti lavorati sono positivi
+          if (minutiLavorati > 0) {
+            const h = Math.floor(minutiLavorati / 60);
+            const m = minutiLavorati % 60;
+            oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
+            oreTotaliGiorno = h + m / 60;
+          }
         }
 
         riga.innerHTML = `
@@ -944,19 +980,25 @@
           }
           return;
         }
+
+        // Nuova logica per determinare la data da usare
         let dataDaUsare = dataCorrenteModale;
         const [h] = valore.split(":").map(Number);
-        if (h < 2) {
+        
+        // Se l'orario è nella fascia notturna (00:00-04:59), appartiene al giorno lavorativo precedente
+        if (h >= 0 && h <= 4) {
+          // La data rimane quella del giorno lavorativo (dataCorrenteModale)
+          // ma nel campo 'data' salviamo il giorno successivo per mantenere la cronologia corretta
           let d = new Date(dataCorrenteModale);
-          d.setDate(d.getDate() - 1);
+          d.setDate(d.getDate() + 1);
           dataDaUsare = d.toISOString().split("T")[0];
         }
         if (timbraturaCorrente && timbraturaCorrente.id) {
           // Aggiornamento record esistente
           const updateData = {
             ore: valore,
-            giornologico: dataDaUsare,
-            data: dataCorrenteModale
+            giornologico: dataCorrenteModale, // Giorno lavorativo di appartenenza
+            data: dataDaUsare // Data cronologica effettiva
           };
 
           const { data, error } = await supabase
@@ -976,9 +1018,9 @@
             pin: pinVal,
             nome: nomeVal,
             cognome: cognomeVal,
-            data: dataCorrenteModale,
+            data: dataDaUsare, // Data cronologica effettiva
             ore: valore,
-            giornologico: dataDaUsare
+            giornologico: dataCorrenteModale // Giorno lavorativo di appartenenza
           };
 
           const { data, error } = await supabase

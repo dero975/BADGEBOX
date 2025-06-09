@@ -210,6 +210,133 @@
         background-color: #dc2626 !important;
         color: white;
       }
+
+    /* Media query per mobile */
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+
+      .data-ora {
+        font-size: 14px;
+        margin-bottom: 15px;
+      }
+
+      .data-ora h2 {
+        font-size: 20px;
+        margin-bottom: 2px;
+      }
+
+      .logo {
+        width: 100px;
+        margin-bottom: -8px;
+      }
+
+      .pin-container {
+        margin-bottom: 20px;
+      }
+
+      .pin-input {
+        font-size: 16px;
+        padding: 10px 15px;
+        width: 90%;
+        max-width: 250px;
+      }
+
+      .keypad {
+        gap: 10px;
+        max-width: 280px;
+      }
+
+      .key {
+        width: 50px;
+        height: 50px;
+        font-size: 16px;
+      }
+
+      .button-container {
+        margin-top: 20px;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 250px;
+      }
+
+      .btn {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+      }
+
+      .status {
+        font-size: 14px;
+        margin-top: 15px;
+        max-width: 90%;
+      }
+    }
+
+    /* Media query per schermi molto piccoli (ottimizzazione aggiuntiva) */
+    @media (max-width: 480px) {
+      .container {
+        padding: 10px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .logo {
+        width: 90px;
+        margin-bottom: -5px;
+      }
+
+      .data-ora {
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+
+      .data-ora h2 {
+        font-size: 18px;
+      }
+
+      .pin-input {
+        font-size: 18px;
+        padding: 12px 16px;
+        max-width: 200px;
+        border-radius: 8px;
+      }
+
+      .keypad {
+        gap: 8px;
+        max-width: 240px;
+        margin: 15px auto;
+      }
+
+      .key {
+        width: 45px;
+        height: 45px;
+        font-size: 15px;
+        border-radius: 50%;
+      }
+
+      .button-container {
+        margin-top: 15px;
+        gap: 8px;
+        max-width: 200px;
+      }
+
+      .btn {
+        padding: 10px;
+        font-size: 15px;
+        border-radius: 8px;
+      }
+
+      .status {
+        font-size: 13px;
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 6px;
+      }
+    }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
     <script type="module">
@@ -222,12 +349,12 @@
     </script>
 </head>
 <body>
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 5px; padding: 10px;">
-      <img src="assets/icons/logo.png" alt="BadgeBox Logo" style="width: 150px; height: auto; margin-bottom: 6.25px;" />
-      <div class="container" style="margin: 0;">
-      <div class="data-time">
-        <div class="data-giorno" id="dataGiorno"></div>
-        <div class="ora" id="ora"></div>
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 2px; padding: 5px;">
+      <img src="assets/icons/logo.png" alt="BadgeBox Logo" style="width: 80px; height: auto; margin-bottom: 2px;" />
+      <div class="container" style="margin: 0; padding: 15px; max-width: 320px;">
+      <div class="data-time" style="margin-bottom: 15px;">
+        <div class="data-giorno" id="dataGiorno" style="font-size: 16px; margin-bottom: 2px;"></div>
+        <div class="ora" id="ora" style="font-size: 20px;"></div>
       </div>
       <input
         type="text"
@@ -235,25 +362,26 @@
         placeholder="PIN"
         readonly
         maxlength="2"
+        style="width: 180px; padding: 10px; font-size: 24px; margin-bottom: 15px;"
       />
       <div id="status"></div>
-      <div class="keypad">
-        <button class="key">1</button>
-        <button class="key">2</button>
-        <button class="key">3</button>
-        <button class="key">4</button>
-        <button class="key">5</button>
-        <button class="key">6</button>
-        <button class="key">7</button>
-        <button class="key">8</button>
-        <button class="key">9</button>
-        <button class="key">C</button>
-        <button class="key">0</button>
-        <button class="key" style="color: #ffff99;">⚙️</button>
+      <div class="keypad" style="grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; max-width: 200px;">
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">1</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">2</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">3</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">4</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">5</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">6</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">7</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">8</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">9</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">C</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 20px;">0</button>
+        <button class="key" style="width: 60px; height: 60px; font-size: 16px; color: #ffff99;">⚙️</button>
       </div>
-      <div class="actions">
-        <button class="action-btn entrata">Entrata</button>
-        <button class="action-btn uscita">Uscita</button>
+      <div class="actions" style="gap: 10px; margin-top: 10px;">
+        <button class="action-btn entrata" style="padding: 12px 16px; font-size: 16px;">Entrata</button>
+        <button class="action-btn uscita" style="padding: 12px 16px; font-size: 16px;">Uscita</button>
       </div>
     </div>
 

@@ -713,7 +713,7 @@
     });
 
     // Inizializza EmailJS
-    emailjs.init("YOUR_PUBLIC_KEY_HERE"); // Sostituisci con la tua chiave pubblica EmailJS
+    emailjs.init("TUA_PUBLIC_KEY_QUI"); // Inserisci la tua Public Key da EmailJS
 
     // Funzione per inviare PDF via email
     document.getElementById("btn-invia").addEventListener("click", () => {
@@ -851,7 +851,7 @@
         };
         
         // Invia email tramite EmailJS
-        await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams);
+        await emailjs.send('TUO_SERVICE_ID', 'template_xxxxxxx', templateParams);
         
         // Successo
         btnInvia.innerHTML = '<span style="color: green;">✓ Inviato!</span>';

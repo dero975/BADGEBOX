@@ -166,6 +166,17 @@
       background-color: #19202F;
     }
 
+    /* Stile per timbrature extra (turni spezzati) */
+    table tr.timbratura-extra td {
+      background-color: #2a2416 !important;
+      color: #fef08a !important;
+      font-style: italic;
+    }
+
+    table tr.timbratura-extra.weekend td {
+      background-color: #252012 !important;
+    }
+
     table tr:last-child td {
       border-bottom: none;
     }
@@ -772,6 +783,7 @@
         const dataFormattata = isMobile ? 
           `${giornoNumero} ${giornoSettimana.slice(0,3)}` : 
           `${giornoNumero}  ${giornoSettimana}`;
+        
         const timbratureOggi = timbrature.filter(t => {
           if (!t.data) return false;
           let dataTimbratura = t.data;
@@ -781,51 +793,111 @@
           return dataTimbratura === dataISO;
         });
 
-        const timbraturaEntrata = timbratureOggi.find(t => t.tipo === "entrata") || null;
-        const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
+        // Ordina le timbrature per ora
+        timbratureOggi.sort((a, b) => {
+          if (a.ore && b.ore) {
+            return a.ore.localeCompare(b.ore);
+          }
+          return 0;
+        });
 
-        let oreLavorate = "—";
-        if (timbraturaEntrata && timbraturaUscita) {
-          // Usa il nome corretto della colonna 'ore'
-          const oraEntrata = timbraturaEntrata.ore;
-          const oraUscita = timbraturaUscita.ore;
+        // Raggruppa entrate e uscite
+        const entrate = timbratureOggi.filter(t => t.tipo === "entrata");
+        const uscite = timbratureOggi.filter(t => t.tipo === "uscita");
 
-          if (oraEntrata && oraUscita) {
-            const inizio = new Date(`1970-01-01T${oraEntrata}`);
-            const fine = new Date(`1970-01-01T${oraUscita}`);
+        // Se non ci sono timbrature, mostra riga vuota
+        if (entrate.length === 0 && uscite.length === 0) {
+          const riga = document.createElement("tr");
+          
+          // Aggiungi classe weekend per sabati (6) e domeniche (0)
+          if (current.getDay() === 0 || current.getDay() === 6) {
+            riga.classList.add('weekend');
+          }
+
+          riga.innerHTML = `
+            <td style="text-align: left;">${dataFormattata}</td>
+            <td>—</td>
+            <td>—</td>
+            <td style="color: #ffff99;">—</td>
+            <td>
+              <img
+                src="assets/icons/matita-colorata.png"
+                class="modifica-icon"
+                data-data="${dataISO}"
+                title="Modifica"
+                alt="Modifica"
+              />
+            </td>
+          `;
+          tbody.appendChild(riga);
+          continue;
+        }
+
+        // Calcola il numero massimo di coppie entrata/uscita
+        const maxCoppie = Math.max(entrate.length, uscite.length);
+        let oreTotaliGiorno = 0;
+
+        for (let i = 0; i < maxCoppie; i++) {
+          const entrata = entrate[i] || null;
+          const uscita = uscite[i] || null;
+          const riga = document.createElement("tr");
+
+          // Prima timbratura (principale) - sfondo normale
+          // Timbrature aggiuntive - sfondo giallo chiaro
+          const isPrimaTimbrata = i === 0;
+          const isTimbrataExtra = i > 0;
+
+          // Aggiungi classe weekend per sabati (6) e domeniche (0)
+          if (current.getDay() === 0 || current.getDay() === 6) {
+            riga.classList.add('weekend');
+          }
+
+          // Applica stile per timbrature extra
+          if (isTimbrataExtra) {
+            riga.style.backgroundColor = '#2a2416'; // Giallo scuro per leggibilità
+            riga.style.color = '#fef08a'; // Testo giallo chiaro
+          }
+
+          const oraEntrataDisplay = entrata && entrata.ore ? entrata.ore.slice(0,5) : '—';
+          const oraUscitaDisplay = uscita && uscita.ore ? uscita.ore.slice(0,5) : '—';
+
+          // Calcola ore lavorate per questa coppia
+          let oreLavorate = "—";
+          if (entrata && uscita && entrata.ore && uscita.ore) {
+            const inizio = new Date(`1970-01-01T${entrata.ore}`);
+            const fine = new Date(`1970-01-01T${uscita.ore}`);
             if (fine < inizio) fine.setDate(fine.getDate() + 1);
             const diffMs = fine - inizio;
             const h = Math.floor(diffMs / (1000 * 60 * 60));
             const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
             oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
-            totaleMensileOre += h + m / 60;
+            oreTotaliGiorno += h + m / 60;
           }
-        }
-        const riga = document.createElement("tr");
-        const oraEntrataDisplay = timbraturaEntrata && timbraturaEntrata.ore ? timbraturaEntrata.ore.slice(0,5) : '—';
-        const oraUscitaDisplay = timbraturaUscita && timbraturaUscita.ore ? timbraturaUscita.ore.slice(0,5) : '—';
 
-        // Aggiungi classe weekend per sabati (6) e domeniche (0)
-        if (current.getDay() === 0 || current.getDay() === 6) {
-          riga.classList.add('weekend');
+          // Per le timbrature extra, non mostrare la data
+          const dataDisplay = isPrimaTimbrata ? dataFormattata : '';
+
+          riga.innerHTML = `
+            <td style="text-align: left; ${isTimbrataExtra ? 'color: #fef08a; font-style: italic;' : ''}">${dataDisplay}</td>
+            <td style="${isTimbrataExtra ? 'color: #fef08a;' : ''}">${oraEntrataDisplay}</td>
+            <td style="${isTimbrataExtra ? 'color: #fef08a;' : ''}">${oraUscitaDisplay}</td>
+            <td style="color: #ffff99; ${isTimbrataExtra ? 'font-weight: normal;' : ''}">${oreLavorate}</td>
+            <td>
+              ${isPrimaTimbrata ? `
+                <img
+                  src="assets/icons/matita-colorata.png"
+                  class="modifica-icon"
+                  data-data="${dataISO}"
+                  title="Modifica"
+                  alt="Modifica"
+                />
+              ` : ''}
+            </td>
+          `;
+          tbody.appendChild(riga);
         }
 
-        riga.innerHTML = `
-          <td style="text-align: left;">${dataFormattata}</td>
-          <td>${oraEntrataDisplay}</td>
-          <td>${oraUscitaDisplay}</td>
-          <td style="color: #ffff99;">${oreLavorate}</td>
-          <td>
-            <img
-              src="assets/icons/matita-colorata.png"
-              class="modifica-icon"
-              data-data="${dataISO}"
-              title="Modifica"
-              alt="Modifica"
-            />
-          </td>
-        `;
-        tbody.appendChild(riga);
+        totaleMensileOre += oreTotaliGiorno;
       }
       const rigaTotale = document.createElement("tr");
       rigaTotale.style.fontWeight = "bold";

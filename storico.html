@@ -887,25 +887,24 @@
         `;
         tbody.appendChild(riga);
 
-        // Aggiungi righe EXTRA per timbrature successive
-        const maxExtra = Math.max(entrate.length - 1, uscite.length - 1);
-        for (let i = 1; i <= maxExtra; i++) {
-          const entrataExtra = entrate[i] || null;
-          const uscitaExtra = uscite[i] || null;
+        // Aggiungi righe per sessioni successive
+        for (let i = 1; i < Math.max(entrate.length, uscite.length); i++) {
+          const entrataSuccessiva = entrate[i] || null;
+          const uscitaSuccessiva = uscite[i] || null;
           
-          const rigaExtra = document.createElement("tr");
+          const rigaSuccessiva = document.createElement("tr");
           if (current.getDay() === 0 || current.getDay() === 6) {
-            rigaExtra.classList.add('weekend');
+            rigaSuccessiva.classList.add('weekend');
           }
           
-          const oraEntrataExtraDisplay = entrataExtra && entrataExtra.ore ? entrataExtra.ore.slice(0,5) : '—';
-          const oraUscitaExtraDisplay = uscitaExtra && uscitaExtra.ore ? uscitaExtra.ore.slice(0,5) : '—';
+          const oraEntrataSuccessivaDisplay = entrataSuccessiva && entrataSuccessiva.ore ? entrataSuccessiva.ore.slice(0,5) : '—';
+          const oraUscitaSuccessivaDisplay = uscitaSuccessiva && uscitaSuccessiva.ore ? uscitaSuccessiva.ore.slice(0,5) : '—';
           
-          // Calcola ore extra se entrambe presenti
-          let oreLavorateExtra = "—";
-          if (entrataExtra && uscitaExtra && entrataExtra.ore && uscitaExtra.ore) {
-            const [hEntrata, mEntrata] = entrataExtra.ore.split(":").map(Number);
-            const [hUscita, mUscita] = uscitaExtra.ore.split(":").map(Number);
+          // Calcola ore per la sessione successiva
+          let oreLavorateSuccessive = "—";
+          if (entrataSuccessiva && uscitaSuccessiva && entrataSuccessiva.ore && uscitaSuccessiva.ore) {
+            const [hEntrata, mEntrata] = entrataSuccessiva.ore.split(":").map(Number);
+            const [hUscita, mUscita] = uscitaSuccessiva.ore.split(":").map(Number);
             
             const minutiEntrata = hEntrata * 60 + mEntrata;
             const minutiUscita = hUscita * 60 + mUscita;
@@ -921,19 +920,28 @@
             if (minutiLavorati > 0) {
               const h = Math.floor(minutiLavorati / 60);
               const m = minutiLavorati % 60;
-              oreLavorateExtra = `${h}:${m.toString().padStart(2, '0')}`;
+              oreLavorateSuccessive = `${h}:${m.toString().padStart(2, '0')}`;
               oreTotaliGiorno += h + m / 60;
             }
           }
           
-          rigaExtra.innerHTML = `
-            <td style="text-align: left; color: #ffff99; font-size: 12px;">EXTRA ${i}</td>
-            <td style="color: #ffff99; font-size: 12px;">${oraEntrataExtraDisplay}</td>
-            <td style="color: #ffff99; font-size: 12px;">${oraUscitaExtraDisplay}</td>
-            <td style="color: #ffff99; font-size: 12px;">${oreLavorateExtra}</td>
+          rigaSuccessiva.innerHTML = `
+            <td style="text-align: left;"></td>
             <td></td>
+            <td>${oraEntrataSuccessivaDisplay}</td>
+            <td>${oraUscitaSuccessivaDisplay}</td>
+            <td style="color: #ffff99;">${oreLavorateSuccessive}</td>
+            <td>
+              <img
+                src="assets/icons/matita-colorata.png"
+                class="modifica-icon"
+                data-data="${dataISO}"
+                title="Modifica"
+                alt="Modifica"
+              />
+            </td>
           `;
-          tbody.appendChild(rigaExtra);
+          tbody.appendChild(rigaSuccessiva);
         }
 
         totaleMensileOre += oreTotaliGiorno;

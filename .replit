@@ -66,3 +66,16 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "vite"
+
+[[workflows.workflow]]
+name = "Upgrade GitHub Sicuro"
+author = 42586508
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "chmod +x upgrade.sh"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "./upgrade.sh"

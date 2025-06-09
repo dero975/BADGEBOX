@@ -157,6 +157,12 @@
     table td {
       background-color: #1e293b;
     }
+    
+    /* Stile per sabati e domeniche */
+    table tr.weekend td {
+      background-color: #2d1b69;
+    }
+    
     table tr:last-child td {
       border-bottom: none;
     }
@@ -537,6 +543,11 @@
         const oraEntrataDisplay = timbraturaEntrata && timbraturaEntrata.ore ? timbraturaEntrata.ore.slice(0,5) : '—';
         const oraUscitaDisplay = timbraturaUscita && timbraturaUscita.ore ? timbraturaUscita.ore.slice(0,5) : '—';
 
+        // Aggiungi classe weekend per sabati (6) e domeniche (0)
+        if (current.getDay() === 0 || current.getDay() === 6) {
+          riga.classList.add('weekend');
+        }
+        
         riga.innerHTML = `
           <td style="text-align: left;">${dataFormattata}</td>
           <td>${oraEntrataDisplay}</td>

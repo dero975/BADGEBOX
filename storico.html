@@ -866,12 +866,21 @@
           if (entrata && uscita && entrata.ore && uscita.ore) {
             const inizio = new Date(`1970-01-01T${entrata.ore}`);
             const fine = new Date(`1970-01-01T${uscita.ore}`);
-            if (fine < inizio) fine.setDate(fine.getDate() + 1);
+            
+            // Per timbrature extra (i > 0), considera automaticamente il giorno successivo per ore piccole
+            if (i > 0 && fine <= inizio) {
+              fine.setDate(fine.getDate() + 1);
+            } else if (fine < inizio) {
+              fine.setDate(fine.getDate() + 1);
+            }
+            
             const diffMs = fine - inizio;
-            const h = Math.floor(diffMs / (1000 * 60 * 60));
-            const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
-            oreTotaliGiorno += h + m / 60;
+            if (diffMs > 0) {
+              const h = Math.floor(diffMs / (1000 * 60 * 60));
+              const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+              oreLavorate = `${h}:${m.toString().padStart(2, '0')}`;
+              oreTotaliGiorno += h + m / 60;
+            }
           }
 
           // Per le timbrature extra, non mostrare la data
@@ -1023,12 +1032,22 @@
           }
           return;
         }
+        
         let dataDaUsare = dataCorrenteModale;
         const [h] = valore.split(":").map(Number);
-        if (h < 2) {
-          let d = new Date(dataCorrenteModale);
-          d.setDate(d.getDate() - 1);
-          dataDaUsare = d.toISOString().split("T")[0];
+        
+        // Per timbrature extra (indice > 0), gestisci il giorno logico in modo diverso
+        if (indiceCorrenteModale > 0) {
+          // Per timbrature extra, mantieni sempre il giorno logico uguale alla data
+          // Le timbrature extra appartengono allo stesso "turno" logico
+          dataDaUsare = dataCorrenteModale;
+        } else {
+          // Solo per la prima timbratura, applica la logica del giorno precedente per ore < 2
+          if (h < 2) {
+            let d = new Date(dataCorrenteModale);
+            d.setDate(d.getDate() - 1);
+            dataDaUsare = d.toISOString().split("T")[0];
+          }
         }
         if (timbraturaCorrente && timbraturaCorrente.id) {
           // Aggiornamento record esistente

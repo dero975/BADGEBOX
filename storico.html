@@ -661,7 +661,7 @@
       const { data, error } = await supabase
         .from("timbrature")
         .select("*")
-        .eq("pin", parseInt(pin))
+        .or(`pin.eq.${pin},pin.eq.${parseInt(pin)}`)
         .gte("giornologico", dataInizio.value)
         .lte("giornologico", dataFine.value)
         .order("giornologico", { ascending: true })
@@ -807,8 +807,7 @@
       const timbratureOggi = timbrature.filter(t => {
         let gLogico = t.giornologico;
         if (typeof gLogico !== "string") {
-          gLogico = new Date(gLogico).toISOString().split("T")[0];
-        }
+          gLogico = new Date(gLogico).toISOString().split("T")[0];        }
         return gLogico === dataSelezionata;
       });      timbraturaEntrataCorrente = timbratureOggi.find(t => t.tipo === "entrata") || null;
       timbraturaUscitaCorrente = timbratureOggi.find(t => t.tipo === "uscita") || null;

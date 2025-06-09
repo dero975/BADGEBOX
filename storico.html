@@ -370,6 +370,7 @@
       <select id="filtro-mese">
         <option value="corrente">Mese corrente</option>
         <option value="precedente">Mese precedente</option>
+        <option value="due-precedenti">2 mesi precedenti</option>
       </select>
       <div class="data-container">
         <input type="date" id="data-inizio" />
@@ -465,6 +466,12 @@
         meseIndice -= 1;
         if (meseIndice < 0) {
           meseIndice = 11;
+          anno -= 1;
+        }
+      } else if (mese === "due-precedenti") {
+        meseIndice -= 2;
+        if (meseIndice < 0) {
+          meseIndice += 12;
           anno -= 1;
         }
       }

@@ -959,16 +959,34 @@
         <td style="background-color: #1f3a56 !important;"></td>
       `;
       tbody.appendChild(rigaTotale);
-      aggiungiListenerModifica();
+      
+      // Assicurati che i listener siano aggiunti dopo che la tabella è completamente renderizzata
+      setTimeout(() => {
+        aggiungiListenerModifica();
+      }, 100);
     }
     function aggiungiListenerModifica() {
+      // Rimuovi eventuali listener esistenti
       document.querySelectorAll(".modifica-icon").forEach(icon => {
-        icon.addEventListener("click", () => {
-          const dataSelezionata = icon.dataset.data;
-          const indiceSelezionato = icon.dataset.indice;
-          apriModale(dataSelezionata, indiceSelezionato);
-        });
+        icon.removeEventListener("click", handleModificaClick);
       });
+      
+      // Aggiungi nuovi listener
+      document.querySelectorAll(".modifica-icon").forEach(icon => {
+        icon.addEventListener("click", handleModificaClick);
+      });
+    }
+    
+    function handleModificaClick(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const icon = event.target;
+      const dataSelezionata = icon.dataset.data;
+      const indiceSelezionato = icon.dataset.indice;
+      
+      console.log("Clic su modifica:", dataSelezionata, "indice:", indiceSelezionato);
+      apriModale(dataSelezionata, indiceSelezionato);
     }
     const modalOverlay = document.getElementById("modalOverlay");
     let dataCorrenteModale = null;
@@ -986,14 +1004,28 @@
       dataCorrenteModale = dataSelezionata;
       indiceCorrente = indiceSelezionato;
 
-      // Filtra timbrature del giorno selezionato (considerando anche le notturne del giorno dopo)
+      // Filtra timbrature del giorno selezionato usando la stessa logica della renderizzaTabella
       const timbratureOggi = timbrature.filter(t => {
-        if (!t.giornologico) return false;
-        let gLogico = t.giornologico;
-        if (typeof gLogico !== "string") {
-          gLogico = new Date(gLogico).toISOString().split("T")[0];
+        if (!t.data) return false;
+        let dataTimbratura = t.data;
+        if (typeof dataTimbratura !== "string") {
+          dataTimbratura = new Date(dataTimbratura).toISOString().split("T")[0];
         }
-        return gLogico === dataSelezionata;
+
+        // Prendi timbrature del giorno corrente
+        if (dataTimbratura === dataSelezionata) return true;
+
+        // Prendi anche timbrature del giorno successivo se sono nella fascia 00:00-04:59
+        const giornoSuccessivo = new Date(dataSelezionata);
+        giornoSuccessivo.setDate(giornoSuccessivo.getDate() + 1);
+        const dataSuccessivaISO = giornoSuccessivo.toISOString().split("T")[0];
+
+        if (dataTimbratura === dataSuccessivaISO && t.ore) {
+          const [h] = t.ore.split(":").map(Number);
+          return h >= 0 && h <= 4; // Solo timbrature 00:00-04:59 del giorno dopo
+        }
+
+        return false;
       });
 
       // Separa entrate e uscite e ordinale per ora
@@ -1083,7 +1115,7 @@
       const nomeVal = dipendente ? dipendente.nome : "";
       const cognomeVal = dipendente ? dipendente.cognome : "";
 
-      // Elimina tutte le timbrature esistenti del giorno
+      // Elimina tutte le timbrature esistenti del giorno usando giornologico
       const tutteTimbratureGiorno = timbrature.filter(t => {
         if (!t.data) return false;
         let dataTimbratura = t.data;

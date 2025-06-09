@@ -606,10 +606,39 @@
       <form id="modaleForm">
         <label>Data:</label>
         <input type="date" id="modale-data" disabled />
+        
         <label for="modale-entrata">Entrata:</label>
         <input type="time" id="modale-entrata" />
+        <div id="entrata-giorno-container" style="margin-top: 5px; margin-bottom: 15px; display: none;">
+          <label style="font-size: 12px; color: #a0aec0; margin-bottom: 8px;">Giorno per entrata:</label>
+          <div style="display: flex; gap: 15px; margin-top: 5px;">
+            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0;">
+              <input type="radio" name="entrata-giorno" value="stesso" checked />
+              <span id="entrata-stesso-giorno">Stesso giorno</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0;">
+              <input type="radio" name="entrata-giorno" value="successivo" />
+              <span id="entrata-giorno-successivo">Giorno successivo</span>
+            </label>
+          </div>
+        </div>
+        
         <label for="modale-uscita">Uscita:</label>
         <input type="time" id="modale-uscita" />
+        <div id="uscita-giorno-container" style="margin-top: 5px; margin-bottom: 15px; display: none;">
+          <label style="font-size: 12px; color: #a0aec0; margin-bottom: 8px;">Giorno per uscita:</label>
+          <div style="display: flex; gap: 15px; margin-top: 5px;">
+            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0;">
+              <input type="radio" name="uscita-giorno" value="stesso" checked />
+              <span id="uscita-stesso-giorno">Stesso giorno</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0;">
+              <input type="radio" name="uscita-giorno" value="successivo" />
+              <span id="uscita-giorno-successivo">Giorno successivo</span>
+            </label>
+          </div>
+        </div>
+        
         <div class="modal-btns">
           <button type="button" id="btnSalva">Salva</button>
           <button type="button" id="btnElimina">Elimina</button>
@@ -994,6 +1023,31 @@
       modaleEntrataInput.value = oraEntrata;
       modaleUscitaInput.value = oraUscita;
 
+      // Aggiorna i label dei giorni
+      const dataObj = new Date(dataSelezionata);
+      const giornoSuccessivo = new Date(dataObj);
+      giornoSuccessivo.setDate(giornoSuccessivo.getDate() + 1);
+      
+      document.getElementById('entrata-stesso-giorno').textContent = `${dataObj.getDate().toString().padStart(2, '0')}/${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
+      document.getElementById('entrata-giorno-successivo').textContent = `${giornoSuccessivo.getDate().toString().padStart(2, '0')}/${(giornoSuccessivo.getMonth()+1).toString().padStart(2, '0')}`;
+      document.getElementById('uscita-stesso-giorno').textContent = `${dataObj.getDate().toString().padStart(2, '0')}/${(dataObj.getMonth()+1).toString().padStart(2, '0')}`;
+      document.getElementById('uscita-giorno-successivo').textContent = `${giornoSuccessivo.getDate().toString().padStart(2, '0')}/${(giornoSuccessivo.getMonth()+1).toString().padStart(2, '0')}`;
+
+      // Imposta i radio button in base al giorno logico esistente
+      if (timbraturaEntrataCorrente && timbraturaEntrataCorrente.giornologico) {
+        const giornoLogicoEntrata = timbraturaEntrataCorrente.giornologico;
+        const dataEntrataStr = typeof giornoLogicoEntrata === 'string' ? giornoLogicoEntrata : new Date(giornoLogicoEntrata).toISOString().split('T')[0];
+        const isSessoGiornoEntrata = dataEntrataStr === dataSelezionata;
+        document.querySelector(`input[name="entrata-giorno"][value="${isSessoGiornoEntrata ? 'stesso' : 'successivo'}"]`).checked = true;
+      }
+      
+      if (timbraturaUscitaCorrente && timbraturaUscitaCorrente.giornologico) {
+        const giornoLogicoUscita = timbraturaUscitaCorrente.giornologico;
+        const dataUscitaStr = typeof giornoLogicoUscita === 'string' ? giornoLogicoUscita : new Date(giornoLogicoUscita).toISOString().split('T')[0];
+        const isSessoGiornoUscita = dataUscitaStr === dataSelezionata;
+        document.querySelector(`input[name="uscita-giorno"][value="${isSessoGiornoUscita ? 'stesso' : 'successivo'}"]`).checked = true;
+      }
+
       // Aggiorna il titolo della modale per indicare quale timbratura si sta modificando
       const titoloModale = document.querySelector('#modal h2');
       if (indiceTimbratura === 0) {
@@ -1003,9 +1057,45 @@
       }
 
       modalOverlay.style.display = "flex";
+      
+      // Mostra/nascondi i controlli del giorno quando l'utente inserisce un orario
+      aggiungiListenerGiornoLogico();
     }
     function chiudiModale() {
       modalOverlay.style.display = "none";
+      // Nasconde i controlli giorno quando si chiude la modale
+      document.getElementById('entrata-giorno-container').style.display = 'none';
+      document.getElementById('uscita-giorno-container').style.display = 'none';
+    }
+
+    function aggiungiListenerGiornoLogico() {
+      // Mostra controlli giorno per entrata quando viene inserito un orario
+      modaleEntrataInput.addEventListener('input', function() {
+        const container = document.getElementById('entrata-giorno-container');
+        if (this.value) {
+          container.style.display = 'block';
+        } else {
+          container.style.display = 'none';
+        }
+      });
+      
+      // Mostra controlli giorno per uscita quando viene inserito un orario
+      modaleUscitaInput.addEventListener('input', function() {
+        const container = document.getElementById('uscita-giorno-container');
+        if (this.value) {
+          container.style.display = 'block';
+        } else {
+          container.style.display = 'none';
+        }
+      });
+
+      // Mostra immediatamente se ci sono già valori
+      if (modaleEntrataInput.value) {
+        document.getElementById('entrata-giorno-container').style.display = 'block';
+      }
+      if (modaleUscitaInput.value) {
+        document.getElementById('uscita-giorno-container').style.display = 'block';
+      }
     }
     async function salvaModifiche() {
       const entrataVal = modaleEntrataInput.value;
@@ -1042,26 +1132,37 @@
         }
         
         let dataDaUsare = dataCorrenteModale;
-        const [h] = valore.split(":").map(Number);
         
-        // Per timbrature extra (indice > 0), gestisci il giorno logico in modo diverso
-        if (indiceCorrenteModale > 0) {
-          // Per timbrature extra, se l'ora è < 6 (tipicamente ore notturne), 
-          // aggiungi un giorno alla data per indicare che è del giorno successivo
-          if (h < 6) {
-            let d = new Date(dataCorrenteModale);
-            d.setDate(d.getDate() + 1);
-            dataDaUsare = d.toISOString().split("T")[0];
-          } else {
-            // Per ore normali nelle timbrature extra, mantieni la data originale
-            dataDaUsare = dataCorrenteModale;
-          }
+        // Leggi la selezione del giorno dall'interfaccia
+        const radioGiorno = document.querySelector(`input[name="${tipo}-giorno"]:checked`);
+        if (radioGiorno && radioGiorno.value === 'successivo') {
+          // Utente ha selezionato esplicitamente il giorno successivo
+          let d = new Date(dataCorrenteModale);
+          d.setDate(d.getDate() + 1);
+          dataDaUsare = d.toISOString().split("T")[0];
         } else {
-          // Solo per la prima timbratura, applica la logica del giorno precedente per ore < 2
-          if (h < 2) {
-            let d = new Date(dataCorrenteModale);
-            d.setDate(d.getDate() - 1);
-            dataDaUsare = d.toISOString().split("T")[0];
+          // Usa la logica automatica solo se non c'è selezione esplicita
+          const [h] = valore.split(":").map(Number);
+          
+          // Per timbrature extra (indice > 0), gestisci il giorno logico in modo diverso
+          if (indiceCorrenteModale > 0) {
+            // Per timbrature extra, se l'ora è < 6 (tipicamente ore notturne), 
+            // aggiungi un giorno alla data per indicare che è del giorno successivo
+            if (h < 6) {
+              let d = new Date(dataCorrenteModale);
+              d.setDate(d.getDate() + 1);
+              dataDaUsare = d.toISOString().split("T")[0];
+            } else {
+              // Per ore normali nelle timbrature extra, mantieni la data originale
+              dataDaUsare = dataCorrenteModale;
+            }
+          } else {
+            // Solo per la prima timbratura, applica la logica del giorno precedente per ore < 2
+            if (h < 2) {
+              let d = new Date(dataCorrenteModale);
+              d.setDate(d.getDate() - 1);
+              dataDaUsare = d.toISOString().split("T")[0];
+            }
           }
         }
         if (timbraturaCorrente && timbraturaCorrente.id) {

@@ -867,10 +867,18 @@
             const inizio = new Date(`1970-01-01T${entrata.ore}`);
             const fine = new Date(`1970-01-01T${uscita.ore}`);
             
-            // Per timbrature extra (i > 0), considera automaticamente il giorno successivo per ore piccole
-            if (i > 0 && fine <= inizio) {
-              fine.setDate(fine.getDate() + 1);
+            // Per timbrature extra (i > 0), controlla se l'uscita è nel giorno successivo
+            if (i > 0) {
+              const [hEntrata] = entrata.ore.split(":").map(Number);
+              const [hUscita] = uscita.ore.split(":").map(Number);
+              
+              // Se uscita è nelle prime ore del mattino (< 6) e entrata è nel pomeriggio/sera (> 12)
+              // oppure se uscita è semplicemente minore di entrata, aggiungi un giorno
+              if ((hUscita < 6 && hEntrata > 12) || fine <= inizio) {
+                fine.setDate(fine.getDate() + 1);
+              }
             } else if (fine < inizio) {
+              // Per la prima timbratura, logica standard
               fine.setDate(fine.getDate() + 1);
             }
             
@@ -1038,9 +1046,16 @@
         
         // Per timbrature extra (indice > 0), gestisci il giorno logico in modo diverso
         if (indiceCorrenteModale > 0) {
-          // Per timbrature extra, mantieni sempre il giorno logico uguale alla data
-          // Le timbrature extra appartengono allo stesso "turno" logico
-          dataDaUsare = dataCorrenteModale;
+          // Per timbrature extra, se l'ora è < 6 (tipicamente ore notturne), 
+          // aggiungi un giorno alla data per indicare che è del giorno successivo
+          if (h < 6) {
+            let d = new Date(dataCorrenteModale);
+            d.setDate(d.getDate() + 1);
+            dataDaUsare = d.toISOString().split("T")[0];
+          } else {
+            // Per ore normali nelle timbrature extra, mantieni la data originale
+            dataDaUsare = dataCorrenteModale;
+          }
         } else {
           // Solo per la prima timbratura, applica la logica del giorno precedente per ore < 2
           if (h < 2) {

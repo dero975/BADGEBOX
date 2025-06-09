@@ -423,46 +423,107 @@
       }
 
       .container {
-        padding: 15px;
+        padding: 10px;
       }
 
       .titolo-grande {
-        font-size: 28px;
-        margin-bottom: 15px;
+        font-size: 24px;
+        margin-bottom: 12px;
       }
 
       .titolo-piccolo {
-        font-size: 15px;
+        font-size: 14px;
+      }
+
+      /* Ottimizzazioni tabella per mobile */
+      .tabella-wrapper {
+        padding: 8px;
+        margin-bottom: 15px;
       }
 
       table th, table td {
-        padding: 9px 8px;
-        font-size: 14px;
+        padding: 6px 4px;
+        font-size: 12px;
+        line-height: 1.2;
+      }
+
+      /* Colonne più strette per mobile */
+      table th:first-child, table td:first-child {
+        width: 25%;
+        font-size: 11px;
+      }
+
+      table th:nth-child(2), table td:nth-child(2),
+      table th:nth-child(3), table td:nth-child(3) {
+        width: 18%;
+      }
+
+      table th:nth-child(4), table td:nth-child(4) {
+        width: 20%;
+      }
+
+      table th:last-child, table td:last-child {
+        width: 19%;
+      }
+
+      /* Testo ore più piccolo su mobile */
+      table td:nth-child(4) {
+        font-size: 11px;
+        font-weight: bold;
       }
 
       .pulsanti-basso {
         flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 15px;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 0 10px;
       }
 
       .pulsanti-basso button {
         flex: 1;
-        min-width: 80px;
-        padding: 10px 14px;
-        font-size: 13px;
-        height: 44px;
+        min-width: 70px;
+        padding: 8px 12px;
+        font-size: 12px;
+        height: 40px;
       }
 
       .modifica-icon {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
       }
 
       .icona-calendario-campo {
         width: 18px;
         height: 18px;
         right: 8px;
+      }
+
+      /* Modale più adatto a mobile */
+      #modal {
+        width: 95%;
+        padding: 15px;
+        max-height: 85vh;
+      }
+
+      #modal h2 {
+        font-size: 18px;
+        margin-bottom: 12px;
+      }
+
+      #modal input[type="time"], 
+      #modal input[type="date"] {
+        font-size: 16px;
+        padding: 8px 10px;
+      }
+
+      .modal-btns {
+        margin-top: 15px;
+        gap: 8px;
+      }
+
+      .modal-btns button {
+        padding: 8px 12px;
+        font-size: 13px;
       }
     }
 
@@ -706,7 +767,11 @@
         const dataISO = current.toISOString().split("T")[0];
         const giornoSettimana = giorniSettimana[current.getDay()];
         const giornoNumero = current.getDate().toString().padStart(2, "0");
-        const dataFormattata = `${giornoNumero}  ${giornoSettimana}`;
+        // Versione più compatta per mobile
+        const isMobile = window.innerWidth <= 480;
+        const dataFormattata = isMobile ? 
+          `${giornoNumero} ${giornoSettimana.slice(0,3)}` : 
+          `${giornoNumero}  ${giornoSettimana}`;
         const timbratureOggi = timbrature.filter(t => {
           if (!t.data) return false;
           let dataTimbratura = t.data;

@@ -805,9 +805,6 @@
 
         let oreTotaliGiorno = 0;
 
-        // Determina il numero massimo di coppie entrata/uscita
-        const maxCoppie = Math.max(entrate.length, uscite.length, 1);
-
         // Se non ci sono timbrature, mostra una riga vuota
         if (timbratureLavorative.length === 0) {
           const riga = document.createElement("tr");
@@ -833,58 +830,93 @@
           `;
           tbody.appendChild(riga);
         } else {
-          // Crea le righe per le coppie entrata/uscita
-          for (let i = 0; i < maxCoppie; i++) {
-            const entrata = entrate[i] || null;
-            const uscita = uscite[i] || null;
-            
-            const riga = document.createElement("tr");
-            if (current.getDay() === 0 || current.getDay() === 6) {
-              riga.classList.add('weekend');
-            }
+          // Prima riga: prima entrata e prima uscita
+          const primaEntrata = entrate[0] || null;
+          const primaUscita = uscite[0] || null;
+          
+          const rigaPrincipale = document.createElement("tr");
+          if (current.getDay() === 0 || current.getDay() === 6) {
+            rigaPrincipale.classList.add('weekend');
+          }
 
-            const entrataDisplay = entrata ? entrata.ore.slice(0,5) : '—';
-            const uscitaDisplay = uscita ? uscita.ore.slice(0,5) : '—';
+          const entrataDisplay = primaEntrata ? primaEntrata.ore.slice(0,5) : '—';
+          const uscitaDisplay = primaUscita ? primaUscita.ore.slice(0,5) : '—';
 
-            // Calcola ore lavorate solo se ci sono entrambe
-            let oreLavorateDisplay = '—';
-            if (entrata && uscita) {
-              const oraEntrata = entrata.ore;
-              const oraUscita = uscita.ore;
-              if (oraEntrata && oraUscita) {
-                const inizio = new Date(`1970-01-01T${oraEntrata}`);
-                const fine = new Date(`1970-01-01T${oraUscita}`);
-                if (fine < inizio) fine.setDate(fine.getDate() + 1);
-                const diffMs = fine - inizio;
-                if (diffMs > 0) {
-                  const h = Math.floor(diffMs / (1000 * 60 * 60));
-                  const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                  oreLavorateDisplay = `${h}:${m.toString().padStart(2, '0')}`;
-                  oreTotaliGiorno += h + m / 60;
-                }
+          // Calcola ore lavorate solo se ci sono entrambe
+          let oreLavorateDisplay = '—';
+          if (primaEntrata && primaUscita) {
+            const oraEntrata = primaEntrata.ore;
+            const oraUscita = primaUscita.ore;
+            if (oraEntrata && oraUscita) {
+              const inizio = new Date(`1970-01-01T${oraEntrata}`);
+              const fine = new Date(`1970-01-01T${oraUscita}`);
+              if (fine < inizio) fine.setDate(fine.getDate() + 1);
+              const diffMs = fine - inizio;
+              if (diffMs > 0) {
+                const h = Math.floor(diffMs / (1000 * 60 * 60));
+                const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                oreLavorateDisplay = `${h}:${m.toString().padStart(2, '0')}`;
+                oreTotaliGiorno += h + m / 60;
               }
             }
+          }
 
-            // Determina quale ID usare per la modifica (priorità entrata)
-            const timbraturaIdModifica = entrata ? entrata.id : (uscita ? uscita.id : 'nuovo');
+          const timbraturaIdPrincipale = primaEntrata ? primaEntrata.id : (primaUscita ? primaUscita.id : 'nuovo');
 
-            riga.innerHTML = `
-              <td style="text-align: left;">${i === 0 ? dataFormattata : ''}</td>
-              <td>${entrataDisplay}</td>
-              <td>${uscitaDisplay}</td>
-              <td style="color: ${i === 0 ? '#ffff99' : '#ffffe0'};">${i === 0 ? oreLavorateDisplay : '—'}</td>
-              <td>
-                <img
-                  src="assets/icons/matita-colorata.png"
-                  class="modifica-icon"
-                  data-data="${dataISO}"
-                  data-timbratura-id="${timbraturaIdModifica}"
-                  title="Modifica"
-                  alt="Modifica"
-                />
-              </td>
-            `;
-            tbody.appendChild(riga);
+          rigaPrincipale.innerHTML = `
+            <td style="text-align: left;">${dataFormattata}</td>
+            <td>${entrataDisplay}</td>
+            <td>${uscitaDisplay}</td>
+            <td style="color: #ffff99;">${oreLavorateDisplay}</td>
+            <td>
+              <img
+                src="assets/icons/matita-colorata.png"
+                class="modifica-icon"
+                data-data="${dataISO}"
+                data-timbratura-id="${timbraturaIdPrincipale}"
+                title="Modifica"
+                alt="Modifica"
+              />
+            </td>
+          `;
+          tbody.appendChild(rigaPrincipale);
+
+          // Righe aggiuntive per timbrature extra
+          const maxExtra = Math.max(entrate.length - 1, uscite.length - 1);
+          
+          for (let i = 1; i <= maxExtra; i++) {
+            const entrataExtra = entrate[i] || null;
+            const uscitaExtra = uscite[i] || null;
+            
+            if (entrataExtra || uscitaExtra) {
+              const rigaExtra = document.createElement("tr");
+              if (current.getDay() === 0 || current.getDay() === 6) {
+                rigaExtra.classList.add('weekend');
+              }
+
+              const entrataExtraDisplay = entrataExtra ? entrataExtra.ore.slice(0,5) : '—';
+              const uscitaExtraDisplay = uscitaExtra ? uscitaExtra.ore.slice(0,5) : '—';
+
+              const timbraturaIdExtra = entrataExtra ? entrataExtra.id : (uscitaExtra ? uscitaExtra.id : 'nuovo');
+
+              rigaExtra.innerHTML = `
+                <td style="text-align: left;"></td>
+                <td>${entrataExtraDisplay}</td>
+                <td>${uscitaExtraDisplay}</td>
+                <td style="color: #ffffe0;">—</td>
+                <td>
+                  <img
+                    src="assets/icons/matita-colorata.png"
+                    class="modifica-icon"
+                    data-data="${dataISO}"
+                    data-timbratura-id="${timbraturaIdExtra}"
+                    title="Modifica"
+                    alt="Modifica"
+                  />
+                </td>
+              `;
+              tbody.appendChild(rigaExtra);
+            }
           }
         }
 

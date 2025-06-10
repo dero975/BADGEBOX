@@ -693,86 +693,62 @@
     });
     async function caricaDati() {
       if (!pin) return;
-      const { data: datiUtente, error: errUtente } = await supabase
-        .from("utenti")
-        .select("nome, cognome, email")
-        .or(`pin.eq.${pin},pin.eq.${parseInt(pin)}`)
-        .limit(1)
-        .single();
-      if (errUtente) {
-        console.error("Errore recupero utente:", errUtente.message);
-        alert("Errore recupero utente: " + errUtente.message);
-        return;
-      }
-      if (datiUtente) {
-        dipendente = datiUtente;
-        intestazione.textContent = `${dipendente.nome} ${dipendente.cognome}`;
-      }
-      console.log("Eseguendo query timbrature per PIN:", pin, "Range:", dataInizio.value, "-", dataFine.value);
+      
+      try {
+        // Recupera dati utente
+        const { data: datiUtente, error: errUtente } = await supabase
+          .from("utenti")
+          .select("nome, cognome, email")
+          .or(`pin.eq.${pin},pin.eq.${parseInt(pin)}`)
+          .limit(1)
+          .single();
+          
+        if (errUtente) {
+          console.error("Errore recupero utente:", errUtente.message);
+          alert("Errore recupero utente: " + errUtente.message);
+          return;
+        }
+        
+        if (datiUtente) {
+          dipendente = datiUtente;
+          intestazione.textContent = `${dipendente.nome} ${dipendente.cognome}`;
+        }
 
-      const { data, error } = await supabase
-        .from("timbrature")
-        .select("*")
-        .eq("pin", parseInt(pin))
-        .gte("data", dataInizio.value)
-        .lte("data", dataFine.value)
-        .order("data", { ascending: true })
-        .order("tipo", { ascending: true });
+        // Query UNICA ottimizzata per recuperare TUTTE le timbrature nel range
+        const { data, error } = await supabase
+          .from("timbrature")
+          .select("*")
+          .eq("pin", parseInt(pin))
+          .or(`data.gte.${dataInizio.value},giornologico.gte.${dataInizio.value}`)
+          .or(`data.lte.${dataFine.value},giornologico.lte.${dataFine.value}`)
+          .order("data", { ascending: true })
+          .order("ore", { ascending: true });
 
-      console.log("Query SQL eseguita:", `SELECT * FROM timbrature WHERE pin = ${parseInt(pin)} AND data >= '${dataInizio.value}' AND data <= '${dataFine.value}' ORDER BY data ASC, tipo ASC`);
-
-      if (error) {
-        console.error("Errore nel recupero timbrature:", error);
-        console.error("Dettagli errore:", JSON.stringify(error, null, 2));
-
-        // Ignora errori di schema cache ma mostra altri errori
-        if (error.code !== 'PGRST202') {
+        if (error && error.code !== 'PGRST202') {
+          console.error("Errore nel recupero timbrature:", error);
           alert("Errore nel recupero timbrature: " + error.message);
           return;
-        } else {
-          console.log("Errore schema cache ignorato, continuando...");
         }
-      }
 
-      console.log("Dati timbrature ricevuti:", data);
-      console.log("Struttura primo record:", data.length > 0 ? Object.keys(data[0]) : "Nessun record");
-      
-      // Debug dettagliato delle timbrature
-      if (data && data.length > 0) {
-        console.log("Dettaglio timbrature per debug:");
-        data.forEach((t, index) => {
-          console.log(`[${index}] ID:${t.id} Tipo:${t.tipo} Data:${t.data} Ore:${t.ore} GiornoLogico:${t.giornologico}`);
+        // Filtra le timbrature che rientrano effettivamente nel range
+        const dataInizioObj = new Date(dataInizio.value);
+        const dataFineObj = new Date(dataFine.value);
+        
+        timbrature = (data || []).filter(t => {
+          // Usa giornologico se presente, altrimenti data
+          const dataRiferimento = t.giornologico || t.data;
+          const dataTimbratura = new Date(dataRiferimento);
+          
+          return dataTimbratura >= dataInizioObj && dataTimbratura <= dataFineObj;
         });
-      }
-      
-      // Query alternativa per controllare se ci sono timbrature con giornologico nel range
-      const { data: dataAlternativa, error: errorAlternativo } = await supabase
-        .from("timbrature")
-        .select("*")
-        .eq("pin", parseInt(pin))
-        .gte("giornologico", dataInizio.value)
-        .lte("giornologico", dataFine.value)
-        .order("giornologico", { ascending: true });
 
-      if (dataAlternativa && dataAlternativa.length > 0) {
-        console.log("Timbrature trovate con filtro giornologico:", dataAlternativa.length);
-        dataAlternativa.forEach((t, index) => {
-          console.log(`ALT[${index}] ID:${t.id} Tipo:${t.tipo} Data:${t.data} Ore:${t.ore} GiornoLogico:${t.giornologico}`);
-        });
+        console.log(`Trovate ${timbrature.length} timbrature per PIN ${pin} nel periodo ${dataInizio.value} - ${dataFine.value}`);
         
-        // Unisci i risultati evitando duplicati
-        const tutteLeTimbrature = [...(data || [])];
-        dataAlternativa.forEach(tAlt => {
-          if (!tutteLeTimbrature.find(t => t.id === tAlt.id)) {
-            tutteLeTimbrature.push(tAlt);
-          }
-        });
-        
-        timbrature = tutteLeTimbrature;
-        console.log("Totale timbrature unificate:", timbrature.length);
-      } else {
-        timbrature = data || [];
+      } catch (error) {
+        console.error("Errore caricamento dati:", error);
+        alert("Errore durante il caricamento dei dati");
       }
+      
       renderizzaTabella();
     }
     function renderizzaTabella() {
@@ -801,31 +777,22 @@
           `${giornoNumero} ${giornoSettimana.slice(0,3)}` : 
           `${giornoNumero}  ${giornoSettimana}`;
 
-        // Raggruppa TUTTE le timbrature per giorno logico (giornologico)
+        // Raggruppa timbrature per giorno usando logica semplificata
         const timbratureOggi = timbrature.filter(t => {
-          if (!t.data) return false;
+          // Usa giornologico se presente, altrimenti data
+          const dataRiferimento = t.giornologico || t.data;
           
-          // Usa giornologico se presente e valido, altrimenti usa data
-          let giornoLogico = t.giornologico;
-          
-          // Se giornologico è null, undefined o vuoto, usa la data della timbratura
-          if (!giornoLogico) {
-            giornoLogico = t.data;
+          // Converte in formato YYYY-MM-DD se necessario
+          let dataFormattata;
+          if (typeof dataRiferimento === 'string' && dataRiferimento.includes('T')) {
+            dataFormattata = dataRiferimento.split('T')[0];
+          } else if (typeof dataRiferimento === 'string') {
+            dataFormattata = dataRiferimento;
+          } else {
+            dataFormattata = new Date(dataRiferimento).toISOString().split('T')[0];
           }
           
-          // Assicurati che sia una stringa in formato ISO
-          if (typeof giornoLogico !== "string") {
-            giornoLogico = new Date(giornoLogico).toISOString().split("T")[0];
-          }
-          
-          // Se la stringa non è in formato YYYY-MM-DD, convertila
-          if (giornoLogico.includes('T')) {
-            giornoLogico = giornoLogico.split('T')[0];
-          }
-          
-          console.log(`Timbratura ID:${t.id} Tipo:${t.tipo} Data:${t.data} GiornoLogico:${giornoLogico} Confronto con:${dataISO}`);
-          
-          return giornoLogico === dataISO;
+          return dataFormattata === dataISO;
         });
 
         // Trova timbrature entrata e uscita per questo giorno
@@ -1351,7 +1318,16 @@
       XLSX.writeFile(wb, nomeFile);
     }
     window.addEventListener("load", () => {
-      aggiornaRange("corrente");
+      // Imposta range date per il mese corrente (giugno 2025 -> ottobre 2025)
+      const oggi = new Date();
+      oggi.setFullYear(2025, 9, 1); // Ottobre 2025 (mese 9 = ottobre)
+      
+      const primoGiorno = new Date(oggi.getFullYear(), oggi.getMonth(), 1);
+      const ultimoGiorno = new Date(oggi.getFullYear(), oggi.getMonth() + 1, 0);
+      
+      dataInizio.value = primoGiorno.toISOString().split('T')[0];
+      dataFine.value = ultimoGiorno.toISOString().split('T')[0];
+      
       caricaDati();
     });
   </script>

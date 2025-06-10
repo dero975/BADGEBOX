@@ -25,6 +25,7 @@ to = "/index.html"
 [[ports]]
 localPort = 5173
 externalPort = 80
+exposeLocalhost = true
 
 [[ports]]
 localPort = 5174

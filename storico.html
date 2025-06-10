@@ -814,10 +814,66 @@
         const timbratureEntrata = timbratureOggi.filter(t => t.tipo === "entrata").sort((a, b) => a.ore.localeCompare(b.ore));
         const timbratureUscita = timbratureOggi.filter(t => t.tipo === "uscita").sort((a, b) => a.ore.localeCompare(b.ore));
 
-        let oreTotaliGiorno = 0;
+        // Algoritmo di abbinamento intelligente entrata-uscita
+        const coppieTimbrature = [];
+        const entrateUsate = new Set();
+        const usciteUsate = new Set();
 
-        // Se ci sono timbrature multiple, crea più righe
-        const maxTimbrature = Math.max(timbratureEntrata.length, timbratureUscita.length, 1);
+        // Prima passa: abbina le uscite notturne (00:00-06:00) con le entrate della sera precedente
+        timbratureUscita.forEach((uscita, uIndex) => {
+          const oraUscita = uscita.ore.split(':').map(Number);
+          const oreUscita = oraUscita[0] + oraUscita[1] / 60;
+          
+          // Se è un'uscita notturna (tra 00:00 e 06:00)
+          if (oreUscita >= 0 && oreUscita < 6) {
+            // Cerca l'entrata della sera precedente non ancora abbinata
+            for (let eIndex = timbratureEntrata.length - 1; eIndex >= 0; eIndex--) {
+              const entrata = timbratureEntrata[eIndex];
+              const oraEntrata = entrata.ore.split(':').map(Number);
+              const oreEntrata = oraEntrata[0] + oraEntrata[1] / 60;
+              
+              // Entrata pomeridiana/serale non ancora abbinata
+              if (oreEntrata >= 12 && !entrateUsate.has(eIndex)) {
+                coppieTimbrature.push({ entrata, uscita, entrataIndex: eIndex, uscitaIndex: uIndex });
+                entrateUsate.add(eIndex);
+                usciteUsate.add(uIndex);
+                break;
+              }
+            }
+          }
+        });
+
+        // Seconda passa: abbina le rimanenti entrate e uscite in ordine cronologico
+        timbratureEntrata.forEach((entrata, eIndex) => {
+          if (!entrateUsate.has(eIndex)) {
+            // Cerca la prima uscita non abbinata
+            for (let uIndex = 0; uIndex < timbratureUscita.length; uIndex++) {
+              if (!usciteUsate.has(uIndex)) {
+                const uscita = timbratureUscita[uIndex];
+                coppieTimbrature.push({ entrata, uscita, entrataIndex: eIndex, uscitaIndex: uIndex });
+                entrateUsate.add(eIndex);
+                usciteUsate.add(uIndex);
+                break;
+              }
+            }
+          }
+        });
+
+        // Aggiungi timbrature rimaste senza coppia
+        timbratureEntrata.forEach((entrata, eIndex) => {
+          if (!entrateUsate.has(eIndex)) {
+            coppieTimbrature.push({ entrata, uscita: null, entrataIndex: eIndex, uscitaIndex: null });
+          }
+        });
+
+        timbratureUscita.forEach((uscita, uIndex) => {
+          if (!usciteUsate.has(uIndex)) {
+            coppieTimbrature.push({ entrata: null, uscita, entrataIndex: null, uscitaIndex: uIndex });
+          }
+        });
+
+        let oreTotaliGiorno = 0;
+        const maxTimbrature = Math.max(coppieTimbrature.length, 1);
         
         for (let i = 0; i < maxTimbrature; i++) {
           const riga = document.createElement("tr");
@@ -825,8 +881,9 @@
             riga.classList.add('weekend');
           }
 
-          const timbraturaEntrata = timbratureEntrata[i] || null;
-          const timbraturaUscita = timbratureUscita[i] || null;
+          const coppia = coppieTimbrature[i] || {};
+          const timbraturaEntrata = coppia.entrata || null;
+          const timbraturaUscita = coppia.uscita || null;
 
           const entrataDisplay = timbraturaEntrata ? timbraturaEntrata.ore.slice(0,5) : '—';
           const uscitaDisplay = timbraturaUscita ? timbraturaUscita.ore.slice(0,5) : '—';

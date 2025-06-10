@@ -719,6 +719,8 @@
         .order("data", { ascending: true })
         .order("tipo", { ascending: true });
 
+      console.log(`Query eseguita - PIN: ${pin}, Range: ${dataInizio.value} - ${dataFine.value}`);
+
       if (error) {
         console.error("Errore nel recupero timbrature:", error);
         console.error("Dettagli errore:", JSON.stringify(error, null, 2));
@@ -739,8 +741,19 @@
       if (data && data.length > 0) {
         console.log("Dettaglio timbrature per debug:");
         data.forEach((t, index) => {
-          console.log(`[${index}] ID:${t.id} Tipo:${t.tipo} Data:${t.data} Ore:${t.ore} GiornoLogico:${t.giornologico}`);
+          console.log(`[${index}] ID:${t.id} PIN:${t.pin} Tipo:${t.tipo} Data:${t.data} Ore:${t.ore} GiornoLogico:${t.giornologico}`);
         });
+        
+        // Raggruppa per giorno per debug
+        const raggruppatoPerGiorno = {};
+        data.forEach(t => {
+          const giornoKey = t.giornologico || t.data;
+          if (!raggruppatoPerGiorno[giornoKey]) {
+            raggruppatoPerGiorno[giornoKey] = [];
+          }
+          raggruppatoPerGiorno[giornoKey].push(`${t.tipo} ${t.ore}`);
+        });
+        console.log("Timbrature raggruppate per giorno:", raggruppatoPerGiorno);
       }
       
       timbrature = data || [];
@@ -774,19 +787,25 @@
 
         // Raggruppa TUTTE le timbrature per giorno logico (giornologico)
         const timbratureOggi = timbrature.filter(t => {
-          if (!t.giornologico && !t.data) return false;
+          if (!t) return false;
           
-          // Usa giornologico se presente, altrimenti usa data
-          let giornoLogico = t.giornologico || t.data;
+          let giornoLogico = null;
           
-          if (typeof giornoLogico !== "string") {
-            giornoLogico = new Date(giornoLogico).toISOString().split("T")[0];
+          // Prima prova con giornologico
+          if (t.giornologico) {
+            giornoLogico = typeof t.giornologico === "string" ? 
+              t.giornologico : 
+              new Date(t.giornologico).toISOString().split("T")[0];
+          }
+          // Se non c'è giornologico, usa la data
+          else if (t.data) {
+            giornoLogico = typeof t.data === "string" ? 
+              t.data : 
+              new Date(t.data).toISOString().split("T")[0];
           }
           
-          // Se giornologico non è presente, usa la data della timbratura
-          if (!t.giornologico) {
-            giornoLogico = new Date(t.data).toISOString().split("T")[0];
-          }
+          // Debug per vedere cosa viene confrontato
+          console.log(`Confronto timbratura ID ${t.id}: ${giornoLogico} === ${dataISO} (PIN: ${t.pin})`);
           
           return giornoLogico === dataISO;
         });

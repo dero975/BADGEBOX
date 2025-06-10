@@ -734,6 +734,15 @@
 
       console.log("Dati timbrature ricevuti:", data);
       console.log("Struttura primo record:", data.length > 0 ? Object.keys(data[0]) : "Nessun record");
+      
+      // Debug dettagliato delle timbrature
+      if (data && data.length > 0) {
+        console.log("Dettaglio timbrature per debug:");
+        data.forEach((t, index) => {
+          console.log(`[${index}] ID:${t.id} Tipo:${t.tipo} Data:${t.data} Ore:${t.ore} GiornoLogico:${t.giornologico}`);
+        });
+      }
+      
       timbrature = data || [];
       renderizzaTabella();
     }
@@ -765,11 +774,20 @@
 
         // Raggruppa TUTTE le timbrature per giorno logico (giornologico)
         const timbratureOggi = timbrature.filter(t => {
-          if (!t.giornologico) return false;
-          let giornoLogico = t.giornologico;
+          if (!t.giornologico && !t.data) return false;
+          
+          // Usa giornologico se presente, altrimenti usa data
+          let giornoLogico = t.giornologico || t.data;
+          
           if (typeof giornoLogico !== "string") {
             giornoLogico = new Date(giornoLogico).toISOString().split("T")[0];
           }
+          
+          // Se giornologico non è presente, usa la data della timbratura
+          if (!t.giornologico) {
+            giornoLogico = new Date(t.data).toISOString().split("T")[0];
+          }
+          
           return giornoLogico === dataISO;
         });
 
@@ -1242,11 +1260,20 @@
         const giornoNumero = current.getDate().toString().padStart(2, "0");
         const dataFormattata = `${giornoNumero} ${giornoSettimana}`;
         const timbratureOggi = timbrature.filter(t => {
-          if (!t.giornologico) return false;
-          let gLogico = t.giornologico;
+          if (!t.giornologico && !t.data) return false;
+          
+          // Usa giornologico se presente, altrimenti usa data
+          let gLogico = t.giornologico || t.data;
+          
           if (typeof gLogico !== "string") {
             gLogico = new Date(gLogico).toISOString().split("T")[0];
           }
+          
+          // Se giornologico non è presente, usa la data della timbratura
+          if (!t.giornologico) {
+            gLogico = new Date(t.data).toISOString().split("T")[0];
+          }
+          
           console.log(`Confronto: ${gLogico} === ${dataISO} per PIN ${t.pin}`);
           return gLogico === dataISO;
         });

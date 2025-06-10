@@ -574,6 +574,9 @@
       <button id="btn-invia" title="Invia Mail">
         <span class="pdf-icon">PDF</span>
       </button>
+      <button id="btn-invia-mail" title="Invia Mail">
+        <img src="assets/icons/invia.png" alt="Invia Mail" />
+      </button>
       <button id="btn-esporta" title="Esporta Excel">
         <img src="assets/icons/esporta.png" alt="Esporta Excel" />
       </button>
@@ -1418,6 +1421,19 @@
         btnInvia.disabled = false;
       }
     }
+
+    // Event listener per il nuovo pulsante Invia Mail
+    document.getElementById("btn-invia-mail").addEventListener("click", () => {
+      if (!dipendente || !dipendente.email) {
+        alert("Email del dipendente non disponibile.");
+        return;
+      }
+      
+      const periodoFormattato = `${formatDataIT(dataInizio.value)} - ${formatDataIT(dataFine.value)}`;
+      if (confirm(`Inviare lo storico timbrature via email?\n\nDipendente: ${dipendente.nome} ${dipendente.cognome}\nPeriodo: ${periodoFormattato}\nEmail: ${dipendente.email}`)) {
+        generaEInviaPDF();
+      }
+    });
 
     document.getElementById("btn-esporta").addEventListener("click", () => {
       esportaExcel();

@@ -11,10 +11,7 @@ export default defineConfig({
       'localhost',
       '127.0.0.1'
     ],
-    hmr: {
-      port: 5000,
-      overlay: false,
-      clientPort: 5000
-    }
+    hmr: false, // Disabilita Hot Module Replacement
+    ws: false   // Disabilita WebSocket completamente
   }
 });

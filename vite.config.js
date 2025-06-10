@@ -1,7 +1,15 @@
+
 import { defineConfig } from 'vite';
 
 export default defineConfig({
   server: {
-    allowedHosts: ['.replit.dev']
+    host: '0.0.0.0',
+    port: 5000,
+    allowedHosts: [
+      '.replit.dev',
+      '.repl.co',
+      'localhost',
+      '127.0.0.1'
+    ]
   }
 });

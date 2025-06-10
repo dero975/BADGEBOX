@@ -644,17 +644,18 @@
         }
       }
 
-      // Sempre dal primo all'ultimo giorno del mese
-      const meseString = String(meseIndice + 1).padStart(2, "0");
-      const dataInizioString = `${anno}-${meseString}-01`;
-      const ultimoGiorno = new Date(anno, meseIndice + 1, 0).getDate();
-      const dataFineString = `${anno}-${meseString}-${String(ultimoGiorno).padStart(2, "0")}`;
+      // Calcola correttamente primo e ultimo giorno del mese
+      const primoGiorno = new Date(anno, meseIndice, 1);
+      const ultimoGiorno = new Date(anno, meseIndice + 1, 0);
+      
+      const dataInizioString = primoGiorno.toISOString().split('T')[0];
+      const dataFineString = ultimoGiorno.toISOString().split('T')[0];
 
       dataInizio.value = dataInizioString;
       dataFine.value = dataFineString;
 
       console.log(`Range aggiornato: dal ${dataInizioString} al ${dataFineString}`);
-      console.log(`Ultimo giorno del mese: ${ultimoGiorno}`);
+      console.log(`Mese: ${meseIndice + 1}/${anno}, Ultimo giorno: ${ultimoGiorno.getDate()}`);
     }
     selectFiltro.addEventListener("change", () => {
       if (selectFiltro.value !== "personalizzato") {
@@ -1328,16 +1329,10 @@
       XLSX.writeFile(wb, nomeFile);
     }
     window.addEventListener("load", () => {
-      // Imposta range date per il mese corrente REALE
-      const oggi = new Date();
+      // Imposta il range per il mese corrente usando la funzione aggiornaRange
+      aggiornaRange("corrente");
       
-      const primoGiorno = new Date(oggi.getFullYear(), oggi.getMonth(), 1);
-      const ultimoGiorno = new Date(oggi.getFullYear(), oggi.getMonth() + 1, 0);
-      
-      dataInizio.value = primoGiorno.toISOString().split('T')[0];
-      dataFine.value = ultimoGiorno.toISOString().split('T')[0];
-      
-      console.log(`Mese corrente impostato: ${primoGiorno.toISOString().split('T')[0]} - ${ultimoGiorno.toISOString().split('T')[0]}`);
+      console.log(`Mese corrente impostato: ${dataInizio.value} - ${dataFine.value}`);
       
       caricaDati();
     });

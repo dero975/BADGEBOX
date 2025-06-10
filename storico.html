@@ -714,60 +714,43 @@
           intestazione.textContent = `${dipendente.nome} ${dipendente.cognome}`;
         }
 
-        // Query principale per recuperare tutte le timbrature nel range di date
+        // Query unica più robusta che recupera TUTTE le timbrature per il PIN
         const { data, error } = await supabase
           .from("timbrature")
           .select("*")
           .eq("pin", parseInt(pin))
-          .gte("data", dataInizio.value)
-          .lte("data", dataFine.value)
           .order("data", { ascending: true })
           .order("ore", { ascending: true });
 
-        console.log("Query SQL eseguita:", `SELECT * FROM timbrature WHERE pin = ${parseInt(pin)} AND data >= '${dataInizio.value}' AND data <= '${dataFine.value}' ORDER BY data ASC, ore ASC`);
-
         if (error) {
           console.error("Errore nel recupero timbrature:", error);
-          console.error("Dettagli errore:", JSON.stringify(error, null, 2));
           alert("Errore nel recupero timbrature: " + error.message);
           return;
         }
 
-        console.log(`Query principale trovata ${(data || []).length} timbrature`);
-        
-        // Query alternativa usando giornologico per recuperare eventuali timbrature sfuggite
-        const { data: dataAlternativa, error: errorAlternativo } = await supabase
-          .from("timbrature")
-          .select("*")
-          .eq("pin", parseInt(pin))
-          .gte("giornologico", dataInizio.value)
-          .lte("giornologico", dataFine.value)
-          .order("giornologico", { ascending: true })
-          .order("ore", { ascending: true });
-
-        if (dataAlternativa && dataAlternativa.length > 0) {
-          console.log("Query alternativa trovata", dataAlternativa.length, "timbrature");
+        // Filtra le timbrature lato client per maggiore controllo
+        timbrature = (data || []).filter(t => {
+          // Determina la data di riferimento per il filtro
+          let dataRiferimento = t.giornologico || t.data;
           
-          // Unisci i risultati evitando duplicati
-          const tutteLeTimbrature = [...(data || [])];
-          dataAlternativa.forEach(tAlt => {
-            if (!tutteLeTimbrature.find(t => t.id === tAlt.id)) {
-              tutteLeTimbrature.push(tAlt);
-              console.log("Aggiunta timbratura dalla query alternativa:", tAlt.id, tAlt.tipo, tAlt.data);
-            }
-          });
-          
-          timbrature = tutteLeTimbrature;
-        } else {
-          timbrature = data || [];
-        }
+          // Normalizza la data in formato YYYY-MM-DD
+          if (typeof dataRiferimento !== 'string') {
+            dataRiferimento = new Date(dataRiferimento).toISOString().split('T')[0];
+          } else if (dataRiferimento.includes('T')) {
+            dataRiferimento = dataRiferimento.split('T')[0];
+          }
 
-        console.log(`TOTALE FINALE: ${timbrature.length} timbrature per PIN ${pin} nel periodo ${dataInizio.value} - ${dataFine.value}`);
-        
-        // Debug dettagliato delle timbrature trovate
-        timbrature.forEach((t, index) => {
-          console.log(`[${index}] ID:${t.id} Tipo:${t.tipo} Data:${t.data} Ore:${t.ore} GiornoLogico:${t.giornologico || 'NULL'}`);
+          // Confronta le date
+          const dentroRange = dataRiferimento >= dataInizio.value && dataRiferimento <= dataFine.value;
+          
+          if (dentroRange) {
+            console.log(`✓ Timbratura inclusa: ID=${t.id}, Tipo=${t.tipo}, Data=${dataRiferimento}, Ore=${t.ore}`);
+          }
+          
+          return dentroRange;
         });
+
+        console.log(`FILTRO APPLICATO: ${timbrature.length} timbrature nel periodo ${dataInizio.value} - ${dataFine.value}`);
         
       } catch (error) {
         console.error("Errore caricamento dati:", error);
@@ -802,22 +785,24 @@
           `${giornoNumero} ${giornoSettimana.slice(0,3)}` : 
           `${giornoNumero}  ${giornoSettimana}`;
 
-        // Raggruppa timbrature per giorno usando logica semplificata
+        // Raggruppa timbrature per giorno con logica corretta
         const timbratureOggi = timbrature.filter(t => {
           // Usa giornologico se presente, altrimenti data
-          const dataRiferimento = t.giornologico || t.data;
+          let dataRiferimento = t.giornologico || t.data;
           
-          // Converte in formato YYYY-MM-DD se necessario
-          let dataFormattata;
-          if (typeof dataRiferimento === 'string' && dataRiferimento.includes('T')) {
-            dataFormattata = dataRiferimento.split('T')[0];
-          } else if (typeof dataRiferimento === 'string') {
-            dataFormattata = dataRiferimento;
-          } else {
-            dataFormattata = new Date(dataRiferimento).toISOString().split('T')[0];
+          // Normalizza la data in formato YYYY-MM-DD
+          if (typeof dataRiferimento !== 'string') {
+            dataRiferimento = new Date(dataRiferimento).toISOString().split('T')[0];
+          } else if (dataRiferimento.includes('T')) {
+            dataRiferimento = dataRiferimento.split('T')[0];
           }
           
-          return dataFormattata === dataISO;
+          const match = dataRiferimento === dataISO;
+          if (match) {
+            console.log(`✓ Timbratura per ${dataISO}: ID=${t.id}, Tipo=${t.tipo}, Ore=${t.ore}`);
+          }
+          
+          return match;
         });
 
         // Trova timbrature entrata e uscita per questo giorno

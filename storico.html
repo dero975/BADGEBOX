@@ -714,35 +714,60 @@
           intestazione.textContent = `${dipendente.nome} ${dipendente.cognome}`;
         }
 
-        // Query UNICA ottimizzata per recuperare TUTTE le timbrature nel range
+        // Query principale per recuperare tutte le timbrature nel range di date
         const { data, error } = await supabase
           .from("timbrature")
           .select("*")
           .eq("pin", parseInt(pin))
-          .or(`data.gte.${dataInizio.value},giornologico.gte.${dataInizio.value}`)
-          .or(`data.lte.${dataFine.value},giornologico.lte.${dataFine.value}`)
+          .gte("data", dataInizio.value)
+          .lte("data", dataFine.value)
           .order("data", { ascending: true })
           .order("ore", { ascending: true });
 
-        if (error && error.code !== 'PGRST202') {
+        console.log("Query SQL eseguita:", `SELECT * FROM timbrature WHERE pin = ${parseInt(pin)} AND data >= '${dataInizio.value}' AND data <= '${dataFine.value}' ORDER BY data ASC, ore ASC`);
+
+        if (error) {
           console.error("Errore nel recupero timbrature:", error);
+          console.error("Dettagli errore:", JSON.stringify(error, null, 2));
           alert("Errore nel recupero timbrature: " + error.message);
           return;
         }
 
-        // Filtra le timbrature che rientrano effettivamente nel range
-        const dataInizioObj = new Date(dataInizio.value);
-        const dataFineObj = new Date(dataFine.value);
+        console.log(`Query principale trovata ${(data || []).length} timbrature`);
         
-        timbrature = (data || []).filter(t => {
-          // Usa giornologico se presente, altrimenti data
-          const dataRiferimento = t.giornologico || t.data;
-          const dataTimbratura = new Date(dataRiferimento);
-          
-          return dataTimbratura >= dataInizioObj && dataTimbratura <= dataFineObj;
-        });
+        // Query alternativa usando giornologico per recuperare eventuali timbrature sfuggite
+        const { data: dataAlternativa, error: errorAlternativo } = await supabase
+          .from("timbrature")
+          .select("*")
+          .eq("pin", parseInt(pin))
+          .gte("giornologico", dataInizio.value)
+          .lte("giornologico", dataFine.value)
+          .order("giornologico", { ascending: true })
+          .order("ore", { ascending: true });
 
-        console.log(`Trovate ${timbrature.length} timbrature per PIN ${pin} nel periodo ${dataInizio.value} - ${dataFine.value}`);
+        if (dataAlternativa && dataAlternativa.length > 0) {
+          console.log("Query alternativa trovata", dataAlternativa.length, "timbrature");
+          
+          // Unisci i risultati evitando duplicati
+          const tutteLeTimbrature = [...(data || [])];
+          dataAlternativa.forEach(tAlt => {
+            if (!tutteLeTimbrature.find(t => t.id === tAlt.id)) {
+              tutteLeTimbrature.push(tAlt);
+              console.log("Aggiunta timbratura dalla query alternativa:", tAlt.id, tAlt.tipo, tAlt.data);
+            }
+          });
+          
+          timbrature = tutteLeTimbrature;
+        } else {
+          timbrature = data || [];
+        }
+
+        console.log(`TOTALE FINALE: ${timbrature.length} timbrature per PIN ${pin} nel periodo ${dataInizio.value} - ${dataFine.value}`);
+        
+        // Debug dettagliato delle timbrature trovate
+        timbrature.forEach((t, index) => {
+          console.log(`[${index}] ID:${t.id} Tipo:${t.tipo} Data:${t.data} Ore:${t.ore} GiornoLogico:${t.giornologico || 'NULL'}`);
+        });
         
       } catch (error) {
         console.error("Errore caricamento dati:", error);

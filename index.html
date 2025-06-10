@@ -344,9 +344,9 @@
         try {
           const { data, error } = await window.supabase
             .from("timbrature")
-            .select("tipo")
+            .select("tipo, data, ore")
             .eq("pin", parseInt(pin))
-            .order("giornologico", { ascending: false })
+            .order("data", { ascending: false })
             .order("ore", { ascending: false })
             .limit(1);
 

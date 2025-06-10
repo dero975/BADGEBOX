@@ -10,6 +10,9 @@ export default defineConfig({
       '.repl.co',
       'localhost',
       '127.0.0.1'
-    ]
+    ],
+    hmr: {
+      port: 5000
+    }
   }
 });

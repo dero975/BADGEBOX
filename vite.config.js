@@ -3,11 +3,12 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   server: {
-    host: '0.0.0.0',
     port: 5000,
+    host: '0.0.0.0',
+    strictPort: true,
+    cors: true,
+    open: false,
     allowedHosts: [
-      '.replit.dev',
-      '.repl.co',
       'localhost',
       '127.0.0.1'
     ],
@@ -16,10 +17,10 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['vite/client']
+      external: ['/@vite/client']
     }
   },
   define: {
-    'import.meta.hot': false
+    'import.meta.hot': 'undefined'
   }
 });

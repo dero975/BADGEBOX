@@ -644,9 +644,9 @@
         }
       }
 
-      // Calcola correttamente primo e ultimo giorno del mese
-      const primoGiorno = new Date(anno, meseIndice, 1);
-      const ultimoGiorno = new Date(anno, meseIndice + 1, 0);
+      // Forza il primo giorno del mese alle 12:00 per evitare problemi di timezone
+      const primoGiorno = new Date(anno, meseIndice, 1, 12, 0, 0);
+      const ultimoGiorno = new Date(anno, meseIndice + 1, 0, 12, 0, 0);
       
       const dataInizioString = primoGiorno.toISOString().split('T')[0];
       const dataFineString = ultimoGiorno.toISOString().split('T')[0];
@@ -655,7 +655,7 @@
       dataFine.value = dataFineString;
 
       console.log(`Range aggiornato: dal ${dataInizioString} al ${dataFineString}`);
-      console.log(`Mese: ${meseIndice + 1}/${anno}, Ultimo giorno: ${ultimoGiorno.getDate()}`);
+      console.log(`Mese: ${meseIndice + 1}/${anno}, Primo giorno: ${primoGiorno.getDate()}, Ultimo giorno: ${ultimoGiorno.getDate()}`);
     }
     selectFiltro.addEventListener("change", () => {
       if (selectFiltro.value !== "personalizzato") {
@@ -775,7 +775,11 @@
 
       console.log(`Rendering tabella dal ${start.toISOString().split('T')[0]} al ${end.toISOString().split('T')[0]}`);
 
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      // Corregge il problema del timezone per il rendering tabella
+      const startDateFixed = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 12, 0, 0);
+      const endDateFixed = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 12, 0, 0);
+      
+      for (let d = new Date(startDateFixed); d <= endDateFixed; d.setDate(d.getDate() + 1)) {
         const current = new Date(d);
         const dataISO = current.toISOString().split("T")[0];
         const giornoSettimana = giorniSettimana[current.getDay()];
@@ -1267,8 +1271,11 @@
       // Riempi righe dati e calcolo totale ore
       let totaleOre = 0;
       const giorniSettimana = ["Domenica", "Lunedi", "Martedi", "Mercoledi", "Giovedi", "Venerdi", "Sabato"];
-      // Ciclo per data nel range corretto (modificato)
-      for (let d = new Date(dataInizio.value); d <= new Date(dataFine.value); d.setDate(d.getDate() + 1)) {
+      // Ciclo per data nel range corretto (con timezone fix)
+      const startDate = new Date(dataInizio.value + 'T12:00:00');
+      const endDate = new Date(dataFine.value + 'T12:00:00');
+      
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         const current = new Date(d);
         const dataISO = current.toISOString().split("T")[0];
         const giornoSettimana = giorniSettimana[current.getDay()];

@@ -1343,15 +1343,16 @@
       XLSX.writeFile(wb, nomeFile);
     }
     window.addEventListener("load", () => {
-      // Imposta range date per il mese corrente (giugno 2025 -> ottobre 2025)
+      // Imposta range date per il mese corrente REALE
       const oggi = new Date();
-      oggi.setFullYear(2025, 9, 1); // Ottobre 2025 (mese 9 = ottobre)
       
       const primoGiorno = new Date(oggi.getFullYear(), oggi.getMonth(), 1);
       const ultimoGiorno = new Date(oggi.getFullYear(), oggi.getMonth() + 1, 0);
       
       dataInizio.value = primoGiorno.toISOString().split('T')[0];
       dataFine.value = ultimoGiorno.toISOString().split('T')[0];
+      
+      console.log(`Mese corrente impostato: ${primoGiorno.toISOString().split('T')[0]} - ${ultimoGiorno.toISOString().split('T')[0]}`);
       
       caricaDati();
     });

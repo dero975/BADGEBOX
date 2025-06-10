@@ -950,7 +950,18 @@
     async function apriModale(dataSelezionata, timbraturaId) {
       dataCorrenteModale = dataSelezionata;
 
-      console.log("Apertura modale per data:", dataSelezionata, "timbraturaId:", timbraturaId);
+      // Verifica e corregge il formato della data se necessario
+      let dataISO = dataSelezionata;
+      if (dataSelezionata && dataSelezionata.includes('/')) {
+        // Se la data è in formato DD/MM/YYYY, convertila in YYYY-MM-DD
+        const parti = dataSelezionata.split('/');
+        if (parti.length === 3) {
+          dataISO = `${parti[2]}-${parti[1].padStart(2, '0')}-${parti[0].padStart(2, '0')}`;
+        }
+      }
+      dataCorrenteModale = dataISO;
+
+      console.log("Apertura modale per data:", dataISO, "timbraturaId:", timbraturaId);
 
       // Cerca l'elemento cliccato per ottenere gli ID entrata/uscita
       const iconaCliccata = document.querySelector(`[data-timbratura-id="${timbraturaId}"]`);
@@ -963,13 +974,14 @@
 
       console.log("Timbrature trovate - Entrata:", timbraturaEntrata, "Uscita:", timbraturaUscita);
 
-      // Modale con entrata e uscita
+      // Modale con entrata e uscita - assicura formato data corretto
+      const dataFormattataISO = dataISO; // usa la data corretta in formato ISO
       const modal = document.getElementById("modal");
       modal.innerHTML = `
         <h2>Modifica Timbratura</h2>
         <form id="modaleForm">
           <label>Data:</label>
-          <input type="date" id="modale-data" value="${dataSelezionata}" disabled />
+          <input type="date" id="modale-data" value="${dataFormattataISO}" disabled />
           <label for="modale-entrata">Entrata:</label>
           <input type="time" id="modale-entrata" value="${timbraturaEntrata ? timbraturaEntrata.ore.slice(0,5) : ''}" />
           <label for="modale-uscita">Uscita:</label>

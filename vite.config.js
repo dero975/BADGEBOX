@@ -12,7 +12,9 @@ export default defineConfig({
       '127.0.0.1'
     ],
     hmr: {
-      port: 5000
+      port: 5000,
+      overlay: false,
+      clientPort: 5000
     }
   }
 });

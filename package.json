@@ -10,7 +10,7 @@
     "upgrade-github": "node upgrade-github.js",
     "upgrade-safe": "chmod +x upgrade.sh && ./upgrade.sh"
   },
-  "dependencies": {
-    "vite": "^5.4.8"
+  "devDependencies": {
+    "vite": "^6.3.5"
   }
 }

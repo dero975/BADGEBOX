@@ -1,6 +1,6 @@
 run = "npm run dev"
 hidden = [".config"]
-modules = ["web", "nodejs-20"]
+modules = ["web", "nodejs-20", "bash"]
 
 [nix]
 channel = "stable-24_05"

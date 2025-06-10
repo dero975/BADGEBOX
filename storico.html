@@ -810,63 +810,73 @@
           return match;
         });
 
-        // Trova timbrature entrata e uscita per questo giorno
-        const timbraturaEntrata = timbratureOggi.find(t => t.tipo === "entrata") || null;
-        const timbraturaUscita = timbratureOggi.find(t => t.tipo === "uscita") || null;
+        // Separa timbrature per tipo e ordina per ora
+        const timbratureEntrata = timbratureOggi.filter(t => t.tipo === "entrata").sort((a, b) => a.ore.localeCompare(b.ore));
+        const timbratureUscita = timbratureOggi.filter(t => t.tipo === "uscita").sort((a, b) => a.ore.localeCompare(b.ore));
 
         let oreTotaliGiorno = 0;
 
-        // Crea sempre UNA SOLA riga per giorno
-        const riga = document.createElement("tr");
-        if (current.getDay() === 0 || current.getDay() === 6) {
-          riga.classList.add('weekend');
-        }
-
-        const entrataDisplay = timbraturaEntrata ? timbraturaEntrata.ore.slice(0,5) : '—';
-        const uscitaDisplay = timbraturaUscita ? timbraturaUscita.ore.slice(0,5) : '—';
-
-        // Calcola ore lavorate solo se ci sono entrambe
-        let oreLavorateDisplay = '—';
+        // Se ci sono timbrature multiple, crea più righe
+        const maxTimbrature = Math.max(timbratureEntrata.length, timbratureUscita.length, 1);
         
-        if (timbraturaEntrata && timbraturaUscita) {
-          const oraEntrata = timbraturaEntrata.ore;
-          const oraUscita = timbraturaUscita.ore;
-          if (oraEntrata && oraUscita) {
-            const inizio = new Date(`1970-01-01T${oraEntrata}`);
-            const fine = new Date(`1970-01-01T${oraUscita}`);
-            if (fine < inizio) fine.setDate(fine.getDate() + 1);
-            const diffMs = fine - inizio;
-            if (diffMs > 0) {
-              const h = Math.floor(diffMs / (1000 * 60 * 60));
-              const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-              oreLavorateDisplay = `${h}:${m.toString().padStart(2, '0')}`;
-              oreTotaliGiorno += h + m / 60;
+        for (let i = 0; i < maxTimbrature; i++) {
+          const riga = document.createElement("tr");
+          if (current.getDay() === 0 || current.getDay() === 6) {
+            riga.classList.add('weekend');
+          }
+
+          const timbraturaEntrata = timbratureEntrata[i] || null;
+          const timbraturaUscita = timbratureUscita[i] || null;
+
+          const entrataDisplay = timbraturaEntrata ? timbraturaEntrata.ore.slice(0,5) : '—';
+          const uscitaDisplay = timbraturaUscita ? timbraturaUscita.ore.slice(0,5) : '—';
+
+          // Calcola ore lavorate per questa coppia
+          let oreLavorateDisplay = '—';
+          
+          if (timbraturaEntrata && timbraturaUscita) {
+            const oraEntrata = timbraturaEntrata.ore;
+            const oraUscita = timbraturaUscita.ore;
+            if (oraEntrata && oraUscita) {
+              const inizio = new Date(`1970-01-01T${oraEntrata}`);
+              const fine = new Date(`1970-01-01T${oraUscita}`);
+              if (fine < inizio) fine.setDate(fine.getDate() + 1);
+              const diffMs = fine - inizio;
+              if (diffMs > 0) {
+                const h = Math.floor(diffMs / (1000 * 60 * 60));
+                const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                oreLavorateDisplay = `${h}:${m.toString().padStart(2, '0')}`;
+                oreTotaliGiorno += h + m / 60;
+              }
             }
           }
+
+          // Determina quale ID usare per la modifica
+          const timbraturaId = timbraturaEntrata ? timbraturaEntrata.id : (timbraturaUscita ? timbraturaUscita.id : 'nuovo');
+
+          // Mostra il nome del giorno solo nella prima riga
+          const dataDisplay = i === 0 ? dataFormattata : '';
+
+          riga.innerHTML = `
+            <td style="text-align: left;">${dataDisplay}</td>
+            <td>${entrataDisplay}</td>
+            <td>${uscitaDisplay}</td>
+            <td style="color: #ffff99;">${oreLavorateDisplay}</td>
+            <td>
+              <img
+                src="assets/icons/matita-colorata.png"
+                class="modifica-icon"
+                data-data="${dataISO}"
+                data-timbratura-id="${timbraturaId}"
+                data-entrata-id="${timbraturaEntrata ? timbraturaEntrata.id : ''}"
+                data-uscita-id="${timbraturaUscita ? timbraturaUscita.id : ''}"
+                title="Modifica"
+                alt="Modifica"
+              />
+            </td>
+          `;
+          tbody.appendChild(riga);
         }
-
-        // Determina quale ID usare per la modifica
-        const timbraturaId = timbraturaEntrata ? timbraturaEntrata.id : (timbraturaUscita ? timbraturaUscita.id : 'nuovo');
-
-        riga.innerHTML = `
-          <td style="text-align: left;">${dataFormattata}</td>
-          <td>${entrataDisplay}</td>
-          <td>${uscitaDisplay}</td>
-          <td style="color: #ffff99;">${oreLavorateDisplay}</td>
-          <td>
-            <img
-              src="assets/icons/matita-colorata.png"
-              class="modifica-icon"
-              data-data="${dataISO}"
-              data-timbratura-id="${timbraturaId}"
-              data-entrata-id="${timbraturaEntrata ? timbraturaEntrata.id : ''}"
-              data-uscita-id="${timbraturaUscita ? timbraturaUscita.id : ''}"
-              title="Modifica"
-              alt="Modifica"
-            />
-          </td>
-        `;
-        tbody.appendChild(riga);
 
         totaleMensileOre += oreTotaliGiorno;
       }

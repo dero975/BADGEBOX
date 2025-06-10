@@ -11,7 +11,15 @@ export default defineConfig({
       'localhost',
       '127.0.0.1'
     ],
-    hmr: false, // Disabilita Hot Module Replacement
-    ws: false   // Disabilita WebSocket completamente
+    hmr: false,
+    ws: false
+  },
+  build: {
+    rollupOptions: {
+      external: ['vite/client']
+    }
+  },
+  define: {
+    'import.meta.hot': false
   }
 });
